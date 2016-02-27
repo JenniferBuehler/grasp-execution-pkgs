@@ -1,0 +1,12 @@
+<launch>
+    # Load the grasp fix plugin for gazebo?
+    <arg name="load_grasp_fix" default="false"/>
+
+    #################################
+    # Launch Jaco in Gazebo
+    #################################
+    <include file="$(find jaco_on_table)/launch/jaco_on_table_gazebo_controlled.launch">
+        <arg name="load_world_plugins" value="false"/>
+        <arg name="load_grasp_fix" value="$(arg load_grasp_fix)"/>
+    </include>
+</launch>

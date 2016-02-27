@@ -1,0 +1,26 @@
+<launch>
+
+    # Load the grasp fix plugin for gazebo?
+    <arg name="load_grasp_fix" default="false"/>
+
+    #########################################
+    # Load gazebo_state_plugins ROS parameters
+    ########################################
+    <include file="$(find gazebo_test_tools)/launch/gazebo_fake_object_recognition.launch"/>
+
+	#####################################
+	# Load MoveIt! collision object generator
+    #####################################
+    <include file="$(find object_moveit)/launch/collision_object_generator.launch">
+        # use the default config file
+        <arg name="config_file" value="$(find object_moveit)/config/CollisionObjectsGenerator.yaml"/>
+    </include>
+
+    #################################
+    # Launch Jaco in Gazebo
+    #################################
+    <include file="$(find jaco_on_table)/launch/jaco_on_table_gazebo_controlled.launch">
+        <arg name="load_world_plugins" value="true"/>
+        <arg name="load_grasp_fix" value="$(arg load_grasp_fix)"/>
+    </include>
+</launch>

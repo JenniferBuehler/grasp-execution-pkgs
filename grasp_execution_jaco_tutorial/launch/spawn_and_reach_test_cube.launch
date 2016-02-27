@@ -1,0 +1,13 @@
+<launch>
+    <node name="cube_spawner" pkg="gazebo_test_tools" type="cube_spawner"
+        args="cube1 0.2 0 0.76 robot_base"/>
+    
+    # Recognizing just after launching does not work. Cube will not have been spawned yet
+    # when this is called.
+    <!--node if="$(arg recognize_cube)"
+        name="fake_object_recognizer_cmd" pkg="gazebo_test_tools" type="fake_object_recognizer_cmd"
+        args="cube1 1"/-->
+    
+    <node name="set_arm_to_cube_test" pkg="grasp_execution_jaco_tutorial" type="set_arm_to_cube_test"
+        args=""/>
+</launch>
