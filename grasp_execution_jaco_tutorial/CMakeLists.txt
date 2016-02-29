@@ -8,6 +8,7 @@ find_package(catkin REQUIRED COMPONENTS
   gazebo_grasp_plugin
   jaco_on_table
   jaco_joints
+  object_moveit
   roscpp
 )
 
@@ -50,6 +51,7 @@ include_directories(
 
 add_executable(set_arm_to_cube_test test/SetArmToCubePose.cpp)
 add_executable(grasp_cube_test test/GraspCube.cpp)
+add_executable(attach_cube_moveit_test test/AttachCubeMoveIt.cpp)
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
@@ -60,6 +62,10 @@ target_link_libraries(set_arm_to_cube_test
 )
 
 target_link_libraries(grasp_cube_test
+  ${catkin_LIBRARIES}
+)
+
+target_link_libraries(attach_cube_moveit_test
   ${catkin_LIBRARIES}
 )
 

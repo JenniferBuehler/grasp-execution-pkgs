@@ -99,12 +99,12 @@ void resetFingers(sensor_msgs::JointState& s, const sensor_msgs::JointState& cur
 {
     for (int i=6; i<9; ++i) s.position[i]=currPosState.position[i];
 }
-
 /**
  * Sends a sensor_msgs/JointState message to a topic in order to set the joint state
  * to the fixed position where it can grasp a cube. Helper functions are available
  * for cubes spawned on jaco_on_table at a certain pose.
  */
+
 int main(int argc, char **argv)
 {
     ros::init(argc, argv, "set_joint_state_cube_publisher");
