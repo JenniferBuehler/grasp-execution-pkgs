@@ -1,0 +1,49 @@
+# the grasp to perform
+grasp_execution_msgs/GraspData grasp 
+
+# the current position of the robot in the world. This is just to
+# check whether the action is eligible in the current state.
+# Make sure it is up-to-date when you call the action.
+geometry_msgs/PoseStamped robot_pose
+
+# the current pose of the end effector in the world.
+# This has to be equal to:
+# GraspData.grasp.grasp_pose - GraspData.grasp.approach.direction*GraspData.grasp.approach.desired_distance.
+# Which means the effector currently has to be at the pose at which it then performs
+# the gripper approach, and then finds itself at the GraspData.grasp.grasp_pose.
+geometry_msgs/PoseStamped effector_pose
+
+# The current joint state of the robot. Make sure this is up-to-date
+# when you call this action. This is to ensure the the robot is
+# in the pre-grasp state (has to be equal to gripper_translation_trajectory.points[0]).
+sensor_msgs/JointState joint_state
+
+# The joint trajectory to move from effector_pose 
+# along the approach GripperTranslation specified
+# in the Grasp.msg message (contained in GraspData.msg). 
+# This is to move from pre-grasp state to grasp state.
+trajectory_msgs/JointTrajectory gripper_translation_trajectory
+
+# The joint trajectory to close the grippers, i.e. to move from
+# GraspData.grasp.pre_grasp_posture to
+# GraspData.grasp.grasp_posture
+trajectory_msgs/JointTrajectory close_grasp_trajectory
+
+# set to true if you want to use effector_pose_tolerance 
+# and effector_angle_tolerance for determining whether the end effector
+# is at the correct pose. Set to false if default tolerances are to be used
+bool use_custom_tolerances
+
+# the grasp is only executed if the robot's effector is at the pose
+# specified in the grasp, plus this tolerance
+float32 effector_pose_tolerance
+
+# the grasp is only executed if the robot's effector is at the orientation
+# specified in the grasp, plus this tolerance (in rad)
+float32 effector_angle_tolerance
+---
+
+# the final execution time
+duration execution_time
+
+---

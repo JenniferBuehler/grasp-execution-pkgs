@@ -1,0 +1,30 @@
+# This action sends a command to the hand to open or close the grasp.
+# It can be used like a JointTrajectory action. Alternatively, the joint
+# trajectory can be left unspecified, and the hand just closes.
+# Accepting nodes can handle force feedback control or stop closing
+# the fingers before the target joint state, if they are not moving any more. 
+
+# The target joint state
+sensor_msgs/JointState target_joint_state
+
+# optional: if the gripper movement is more complex, it can be specified
+# as a joint trajectory action. In this case, target_joint_state should
+# be set to the last state in the JointTrajectory
+trajectory_msgs/JointTrajectory trajectory
+
+# If the joint trajectory is to be used instead of the simple closing action,
+# set this to true. If this is false, the trajectory field is ingnored.
+bool use_trajectory
+
+# true if this is an action to close the hand, false if it is opening.
+bool closing
+
+---
+
+# the final execution time
+duration execution_time
+
+# successfully done the grasp
+bool success
+
+---

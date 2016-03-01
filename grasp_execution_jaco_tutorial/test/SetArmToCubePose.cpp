@@ -69,7 +69,7 @@ void getJointStateCube1(const JacoJointManager& joints, sensor_msgs::JointState&
     p.push_back(0.0030029308999246496);
     p.push_back(0.003514033567878272);
     p.push_back(0.005490284397680512);
-    joints.initJointState(pre_grasp_state, true, &p);
+    joints.copyToJointState(pre_grasp_state, 0, &p);
     pre_grasp_state.velocity.resize(p.size(),0);
 
     p.clear();
@@ -82,7 +82,7 @@ void getJointStateCube1(const JacoJointManager& joints, sensor_msgs::JointState&
     p.push_back(0.0030029308999246496);
     p.push_back(0.003514033567878272);
     p.push_back(0.005490284397680512);
-    joints.initJointState(grasp_state, true, &p);
+    joints.copyToJointState(grasp_state, 0, &p);
     grasp_state.velocity.resize(p.size(),0);
 }
 
@@ -90,7 +90,7 @@ sensor_msgs::JointState getHomeState(const JacoJointManager& joints)
 {
     const std::vector<float>& arm_init = joints.getArmJointsInitPose();
     sensor_msgs::JointState ret;
-    joints.initJointState(ret, true, &arm_init);
+    joints.copyToJointState(ret, 0, &arm_init);
     ret.velocity.resize(arm_init.size(),0);
     return ret;
 }
