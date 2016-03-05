@@ -10,7 +10,7 @@
  * Starts up a SimpleGraspControlServer.
  * Launch this node with the following launch file (or include it in another launch file):
  *
- * `` \`rospack find grasp_execution\`/launch/simple_grasp_server.launch `` 
+ * `` \`rospack find grasp_execution\`/launch/simple_grasp_control_server.launch `` 
  *
  * Please also refer to this file (and the SimpleGraspControlServer header documentation)
  * for more details about the required parameters.
@@ -53,7 +53,6 @@ int main(int argc, char**argv){
 	double GOAL_TOLERANCE=DEFAULT_GOAL_TOLERANCE;
 	priv.param<double>("goal_tolerance", GOAL_TOLERANCE, GOAL_TOLERANCE);
 
-
     ROS_INFO("Launching arm components name manager");
     arm_components_name_manager::ArmComponentsNameManager jointsManager(ROBOT_NAMESPACE, false);
     float maxWait=5;
@@ -76,7 +75,9 @@ int main(int argc, char**argv){
         NO_MOVE_STILL_CNT,
         CHECK_FINGER_STATE_RATE);
 
+    ROS_INFO("Initializing...");
 	actionServer.init();
+    ROS_INFO("Done.");
 
     // ros::MultiThreadedSpinner spinner(4); // Use 4 threads
     // spinner.spin(); // spin() will not return until the node has been shutdown

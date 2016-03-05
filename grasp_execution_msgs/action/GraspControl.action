@@ -4,7 +4,8 @@
 # Accepting nodes can handle force feedback control or stop closing
 # the fingers before the target joint state, if they are not moving any more. 
 
-# The target joint state
+# The target joint state. This may include the efforts which
+# the hand is to apply once the grip is closed.
 sensor_msgs/JointState target_joint_state
 
 # optional: if the gripper movement is more complex, it can be specified

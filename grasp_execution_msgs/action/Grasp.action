@@ -1,47 +1,101 @@
-# the grasp to perform
+# the grasp / ungrasp to perform
 grasp_execution_msgs/GraspData grasp 
 
-# the current position of the robot in the world. This is just to
-# check whether the action is eligible in the current state.
-# Make sure it is up-to-date when you call the action.
-geometry_msgs/PoseStamped robot_pose
+# true if this is a grasping action,
+# false if this is an ungrasp action.
+bool is_grasp
 
-# the current pose of the end effector in the world.
-# This has to be equal to:
-# GraspData.grasp.grasp_pose - GraspData.grasp.approach.direction*GraspData.grasp.approach.desired_distance.
-# Which means the effector currently has to be at the pose at which it then performs
-# the gripper approach, and then finds itself at the GraspData.grasp.grasp_pose.
-geometry_msgs/PoseStamped effector_pose
+# For an ungrasping action, there may be an expected
+# end effector pose for the action to be eligible,
+# e.g. at a pose where to place an object.
+# The expected end effector pose is specified in 
+# GraspData.grasp.grasp_pose (for both grasping and
+# ungrasping actions). However sometimes,
+# the action should be eligible anywhere
+# (i.e. the object may be dropped anywhere).
+# To allow the ungrasp action to be eligible anywhere,
+# set this to true.
+bool ignore_effector_pose_ungrasp
 
-# The current joint state of the robot. Make sure this is up-to-date
-# when you call this action. This is to ensure the the robot is
-# in the pre-grasp state (has to be equal to gripper_translation_trajectory.points[0]).
-sensor_msgs/JointState joint_state
+# The joint trajectory to move from curr_effector_pose 
+# along the *approach* GripperTranslation specified
+# in the Grasp.msg message (contained in GraspData.msg).
+# For an ungrasp action, this trajectory should not include
+# the gripper joints, because they should not move while
+# holding the object, and the exact state of the grippers
+# while holding the object can vary and
+# cannot be foreseen exactly.
+trajectory_msgs/JointTrajectory gripper_approach_trajectory
 
-# The joint trajectory to move from effector_pose 
-# along the approach GripperTranslation specified
-# in the Grasp.msg message (contained in GraspData.msg). 
-# This is to move from pre-grasp state to grasp state.
-trajectory_msgs/JointTrajectory gripper_translation_trajectory
+# The joint trajectory to move from the grasp pose, after
+# doint the grasp, along the *retreat* GripperTranslation specified
+# in the Grasp.msg message (contained in GraspData.msg).
+# For a grasp action, this trajectory should not include
+# the gripper joints, because they should not move while
+# holding the object, and the exact state of the grippers
+# while holding the object can vary and
+# cannot be foreseen exactly.
+trajectory_msgs/JointTrajectory gripper_retreat_trajectory
 
-# The joint trajectory to close the grippers, i.e. to move from
+# The joint trajectory to open/close the grippers, i.e. to move from
 # GraspData.grasp.pre_grasp_posture to
-# GraspData.grasp.grasp_posture
-trajectory_msgs/JointTrajectory close_grasp_trajectory
+# GraspData.grasp.grasp_posture, or the other way round if
+# this is an action to un-grasp.
+trajectory_msgs/JointTrajectory grasp_trajectory
 
-# set to true if you want to use effector_pose_tolerance 
-# and effector_angle_tolerance for determining whether the end effector
-# is at the correct pose. Set to false if default tolerances are to be used
+# set to true if you want to use effector_pos_tolerance,
+# effector_angle_tolerance and joint_angles_tolerance
+# for determining whether the end effector / the joints
+# are at the correct pose.
+# Set to false if default tolerances are to be used.
 bool use_custom_tolerances
 
-# the grasp is only executed if the robot's effector is at the pose
-# specified in the grasp, plus this tolerance
-float32 effector_pose_tolerance
+# the grasp is only executed if the robot's effector is at the
+# correct pose, plus this tolerance
+float32 effector_pos_tolerance
 
-# the grasp is only executed if the robot's effector is at the orientation
-# specified in the grasp, plus this tolerance (in rad)
+# the grasp is only executed if the robot's effector is at the
+# correct orientation, plus this tolerance (in rad)
 float32 effector_angle_tolerance
+
+# tolerance allowed for all joints to be at a desirec
+# position (GraspData.grasp.grasp_posture and
+# GraspData.grasp.pre_grasp_posture). 
+float32 joint_angles_tolerance
+
+
+#####################################################
+# Current robot state. While it is possible to
+# rely on that the processing action servers obtain
+# this information via subscribed topics, it should
+# not be required to rely on it, hence the relevant
+# current state of the robot can be passed here as well.
+# All fields should be up-to-date when the action is called.
+#####################################################
+
+# The current pose of the end effector in the world.
+# This has to be equal to:
+# {GraspData.grasp.grasp_pose - GraspData.grasp.approach.direction * GraspData.grasp.approach.desired_distance}.
+# Which means the effector currently has to be at the pose at which after 
+# performing the gripper approach, it is at the GraspData.grasp.grasp_pose.
+# If this is an ungrasp action, and ignore_effector_pose_ungrasp is
+# set to true, checking this condition is skipped.
+geometry_msgs/PoseStamped curr_effector_pose
+
+# The current joint state of the robot. 
+# This is to ensure the the robot is in the correct state
+# for grasping/ungrasping actions
+# (the arm joints in this state have to be equal to
+# gripper_approach_trajectory.points[0]).
+# If this is an ungrasp action, the gripper joints
+# in this state may be ignored, as they should not
+# be part of gripper_approach_trajectory anyway.
+sensor_msgs/JointState curr_joint_state
+
 ---
+
+# successfully finished the grasp / ungrasp
+bool success
 
 # the final execution time
 duration execution_time

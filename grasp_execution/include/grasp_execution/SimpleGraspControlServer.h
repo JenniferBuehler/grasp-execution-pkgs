@@ -14,6 +14,8 @@
 #include <arm_components_name_manager/ArmComponentsNameManager.h>
 #include <arm_components_name_manager/ArmJointStateSubscriber.h>
 
+#include <convenience_ros_functions/ActionServer.h>
+
 
 namespace grasp_execution
 {
@@ -27,10 +29,15 @@ namespace grasp_execution
  * \author Jennifer Buehler
  * \date March 2016
  */
-class SimpleGraspControlServer{
+class SimpleGraspControlServer:
+    public convenience_ros_functions::ActionServer<grasp_execution_msgs::GraspControlAction>
+{
 	protected:
-	typedef actionlib::ActionServer<grasp_execution_msgs::GraspControlAction> GraspControlActionServerT;
+/*	typedef actionlib::ActionServer<grasp_execution_msgs::GraspControlAction> GraspControlActionServerT;
 	typedef GraspControlActionServerT::GoalHandle GoalHandle;
+*/
+    typedef convenience_ros_functions::ActionServer<grasp_execution_msgs::GraspControlAction> GraspControlActionServerT;
+	typedef GraspControlActionServerT::ActionGoalHandle GoalHandle;
 	
 	public:
 	/**
@@ -57,45 +64,27 @@ class SimpleGraspControlServer{
 
 	~SimpleGraspControlServer();
 
-	/**
-	 * Starts action server and does internal initialisation.
-	 */
-	bool init();
+    protected:
+    
+	bool initImpl();
+	void shutdownImpl();
 
-	/**
- 	 * methods to be executed for shutting down the action server
-	 */
-	void shutdown();
 
-	bool executingGoal();
-	bool hasCurrentGoal();
+    virtual bool canAccept(const ActionGoalHandle& goal);
+    virtual void actionCallbackImpl(const ActionGoalHandle& goal);
+    virtual void actionCancelCallbackImpl(ActionGoalHandle& goal);
+
+
 	
 	private: 
     typedef architecture_binding::unique_lock<architecture_binding::mutex>::type unique_lock;	
 	
-	/**
-	 * abort grippers movement execution;
-	 */
-	void abortExecution();
 
-	/** 
-	 * set the flag that execution of the current trajectory has finished in the implementation.
+	/**
+     * Finalises the execution, including calling parent classes currentActionDone(). 
  	 */
-	void setExecutionFinished(bool flag, bool success);
-	/**
-	 * returns flag indicating if execution of trajectory has finished in implementation.
-	 */
-	bool executionFinished(bool& success);
+	void setExecutionFinished(bool success);
 
-	/**
-	 * Receive a new goal
-	 */
-	void actionCallback(GoalHandle& goal);
-	/**
-	 * Receive a cancel trajectory instruction
-	 */
-	void cancelCallback(GoalHandle& goal);
-	
     /**
      * Checks whether the grippers are not moving and updates \e no_move_stat
      * accordingly.
@@ -184,21 +173,9 @@ class SimpleGraspControlServer{
      *  by goal_lock.
      */
 	std::vector<float> target_gripper_angles;
-
-    /*
-     *  to lock access to execution_finished, current_goal,
-     *  target_gripper_angles and has_goal 
-     */
-	architecture_binding::mutex goal_lock;
-	
-	GoalHandle current_goal;
-	bool has_goal;
-	bool execution_finished;
-	bool execution_successful;
+    architecture_binding::recursive_mutex target_gripper_angles_mutex;
 
 	ros::Publisher joint_control_pub;
-
-	GraspControlActionServerT * action_server;
 
 	bool initialized;
 
