@@ -34,10 +34,15 @@ class SimpleGraspControlServer{
 	
 	public:
 	/**
-     * \param gripper_joint_names names of the joints which are involved in the grasping action. These are the joints which are
-     *      checked against the goal state - or if they are not moving for a while, are considered to be grapsing (see \e noMoveTolerance)
-	 * \param goalTolerance when the grippers are this close (in rad) to their target, we assume the grasp as finished.
-	 * \param noMoveTolerance if a gripper does not move this amount within checkStateFreq, it is considered to have met resistance (touched object).
+     * \param gripper_joint_names names of the joints which are involved in the grasping action.
+     *      These are the joints which are checked against the goal state - or if they
+     *      are not moving for a while, are considered to be grapsing (see \e noMoveTolerance)
+	 * \param goalTolerance when the grippers are this close (in rad) to their target,
+     *      we assume the grasp as finished.
+	 * \param noMoveTolerance if a gripper does not move this amount (in rad) within checkStateFreq,
+     *      it is considered to have met resistance (touched object).
+     * \param noMoveStillCnt Number of times at which a joint has not moved (at interval \e checkStateFreq
+     *       and not moved more than \e noMoveTolerance) at which point it is considered "still".
 	 */
 	SimpleGraspControlServer(
 		ros::NodeHandle &n, 
@@ -46,7 +51,8 @@ class SimpleGraspControlServer{
 		std::string& joint_control_topic,
         const arm_components_name_manager::ArmComponentsNameManager& _joints_manager,
 		float goalTolerance,
-		float noMoveTolerance,
+        float noMoveTolerance,
+        int noMoveStillCnt,
 		float checkStateFreq);
 
 	~SimpleGraspControlServer();
@@ -119,6 +125,13 @@ class SimpleGraspControlServer{
      *  \e gripper_angles_check_freq.
      */
 	float NO_MOVE_TOLERANCE;
+   
+    /**
+     * Number of times at which a joint has not moved (at interval
+     * \e gripper_angles_check_freq and not moved more than \e NO_MOVE_TOLERANCE)
+     * at which point it is considered "still".
+     */ 
+    int NO_MOVE_STILL_CNT;
         
     std::vector<std::string> gripper_joint_names;
 

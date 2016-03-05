@@ -3,6 +3,7 @@
 
 #define DEFAULT_CHECK_FINGER_STATE_RATE 20
 #define DEFAULT_NO_MOVE_TOLERANCE 0.05
+#define DEFAULT_NO_MOVE_STILL_CNT 3 
 #define DEFAULT_GOAL_TOLERANCE 1e-02 
 
 /***
@@ -36,7 +37,7 @@ int main(int argc, char**argv){
 	if (!priv.hasParam("robot_namespace"))
     {
         ROS_ERROR_STREAM(ros::this_node::getName()<<": Must have at least 'robot_namespace' defined in private node namespace");
-        return 1;
+        return 0;
     }
 	priv.param<std::string>("robot_namespace", ROBOT_NAMESPACE, ROBOT_NAMESPACE);
 
@@ -45,13 +46,24 @@ int main(int argc, char**argv){
 	
 	double NO_MOVE_TOLERANCE=DEFAULT_NO_MOVE_TOLERANCE;
 	priv.param<double>("no_move_tolerance", NO_MOVE_TOLERANCE, NO_MOVE_TOLERANCE);
+	
+    int NO_MOVE_STILL_CNT=DEFAULT_NO_MOVE_STILL_CNT;
+	priv.param<int>("no_move_still_cnt", NO_MOVE_STILL_CNT, NO_MOVE_STILL_CNT);
 
 	double GOAL_TOLERANCE=DEFAULT_GOAL_TOLERANCE;
 	priv.param<double>("goal_tolerance", GOAL_TOLERANCE, GOAL_TOLERANCE);
 
+
+    ROS_INFO("Launching arm components name manager");
     arm_components_name_manager::ArmComponentsNameManager jointsManager(ROBOT_NAMESPACE, false);
     float maxWait=5;
-    jointsManager.waitToLoadParameters(1,maxWait); 
+    ROS_INFO("Waiting for joint info parameters to be loaded...");
+    if (!jointsManager.waitToLoadParameters(1,maxWait,1))
+    {
+        ROS_ERROR("Joint names (ArmComponentsNameManager) could not be launched due to missing ROS parameters.");
+        return 0;
+    }
+    ROS_INFO("Parameters loaded. Now starting the action server.");
 
 	grasp_execution::SimpleGraspControlServer actionServer(
         pub,
@@ -61,10 +73,13 @@ int main(int argc, char**argv){
         jointsManager,
         GOAL_TOLERANCE,
         NO_MOVE_TOLERANCE,
+        NO_MOVE_STILL_CNT,
         CHECK_FINGER_STATE_RATE);
 
 	actionServer.init();
 
+    // ros::MultiThreadedSpinner spinner(4); // Use 4 threads
+    // spinner.spin(); // spin() will not return until the node has been shutdown
 	ros::spin();
     return 0;
 }

@@ -16,14 +16,6 @@ find_package(catkin REQUIRED COMPONENTS
   convenience_math_functions
 )
 
-## System dependencies are found with CMake's conventions
-# find_package(Boost REQUIRED COMPONENTS system)
-
-## Uncomment this if the package has a setup.py. This macro ensures
-## modules and global scripts declared therein get installed
-## See http://ros.org/doc/api/catkin/html/user_guide/setup_dot_py.html
-# catkin_python_setup()
-
 ################################################
 ## Declare ROS dynamic reconfigure parameters ##
 ################################################
@@ -81,11 +73,18 @@ add_dependencies(simple_grasp_control_server ${${PROJECT_NAME}_EXPORTED_TARGETS}
 add_executable(simple_grasp_control_server_node src/simple_grasp_control_server_node.cpp)
 add_dependencies(simple_grasp_control_server_node simple_grasp_control_server ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
+add_executable(simple_grasp_control_client test/simple_grasp_control_client.cpp)
+add_dependencies(simple_grasp_control_client simple_grasp_control_server ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+
 target_link_libraries(simple_grasp_control_server
   ${catkin_LIBRARIES}
 )
 target_link_libraries(simple_grasp_control_server_node
   simple_grasp_control_server
+  ${catkin_LIBRARIES}
+)
+
+target_link_libraries(simple_grasp_control_client
   ${catkin_LIBRARIES}
 )
 

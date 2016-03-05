@@ -15,9 +15,11 @@ SimpleGraspControlServer::SimpleGraspControlServer(
         const ArmComponentsNameManager& _joints_manager,
 		float goalTolerance,
 		float noMoveTolerance,
+	    int noMoveStillCnt,
 		float checkStateFreq):
 	GOAL_TOLERANCE(goalTolerance),
 	NO_MOVE_TOLERANCE(noMoveTolerance),
+    NO_MOVE_STILL_CNT(noMoveStillCnt),
 	gripper_angles_check_freq(checkStateFreq),
     gripper_check_thread(NULL),
     joints_manager(_joints_manager),    
@@ -27,7 +29,8 @@ SimpleGraspControlServer::SimpleGraspControlServer(
 	execution_successful(false),
 	initialized(false){
     
-    ROS_INFO_STREAM("SimpleGraspControlServer publishing joint control on " << joint_control_topic);
+    ROS_INFO_STREAM("SimpleGraspControlServer for action '"
+        << action_topic_name <<"': publishing joint control on " << joint_control_topic);
     joint_control_pub = n.advertise<sensor_msgs::JointState>(joint_control_topic, 1000, true);
 
     action_server= new GraspControlActionServerT(n, 
@@ -47,7 +50,7 @@ void SimpleGraspControlServer::shutdown(){
 }
 
 bool SimpleGraspControlServer::init(){
-	ROS_INFO("Initialising SimpleGraspControlServer. Starting the action server.");
+	ROS_INFO("Initialising SimpleGraspControlServer: starting action server");
 	action_server->start();
 	ROS_INFO("SimpleGraspControlServer: action server started.");
 	initialized=true;
@@ -86,6 +89,11 @@ void SimpleGraspControlServer::actionCallback(GoalHandle& goal) {
 		goal.setRejected();
 		return;
 	}
+    
+    joint_state_subscriber.setActive(true);
+    ROS_INFO("Waiting to obtain the current state of the gripper...");
+    joint_state_subscriber.waitForUpdate();
+    ROS_INFO("Obtained most recent joint state.");
 	
 	bool valid;
 	last_gripper_angles=joint_state_subscriber.gripperAngles(valid);
@@ -107,14 +115,13 @@ void SimpleGraspControlServer::actionCallback(GoalHandle& goal) {
     }
 	
     ROS_INFO("SimpleGraspControlServer: Goal accepted");
-    for (int i=0; i<_target_gripper_angles.size(); ++i) ROS_INFO_STREAM("Debug "<<i<<": "<<_target_gripper_angles[i]);
+    // for (int i=0; i<_target_gripper_angles.size(); ++i) ROS_INFO_STREAM("Debug "<<i<<": "<<_target_gripper_angles[i]);
 
     // subset of target joint state only containing the
     // gripper joints (just to make sure possibly existent other joints are filtered out)
     sensor_msgs::JointState goal_state_subset;
     joints_manager.copyToJointState(goal_state_subset, 2, &_target_gripper_angles);
 
-    ROS_INFO_STREAM("Debug: "<<goal_state_subset);
 	
 	goal_lock.lock();
 	current_goal=goal;
@@ -131,15 +138,15 @@ void SimpleGraspControlServer::actionCallback(GoalHandle& goal) {
         ros::Duration(0.5).sleep();
     }
 
+    // ROS_INFO_STREAM("Sending out goal JointState = "<<goal_state_subset);
     joint_control_pub.publish(goal_state_subset);
 
     no_move_stat.clear();
     no_move_stat.assign(joints_manager.numGripperJoints(), 0);
-    
+ 
     move_stat.clear();
     move_stat.assign(joints_manager.numGripperJoints(), 0);
-
-    joint_state_subscriber.setActive(true);
+    
  
     // start the thread which continuously checks if the grippers are not moving any more	
     if (gripper_check_thread) cancelGripperCheckThread();
@@ -151,11 +158,11 @@ void SimpleGraspControlServer::cancelGripperCheckThread()
 {
     if (gripper_check_thread)
     {
-        ROS_INFO("Cancelling gripper check thread...");
+        // ROS_INFO("Cancelling gripper check thread...");
         gripper_check_thread->detach();
         delete gripper_check_thread;
         gripper_check_thread = NULL;
-        ROS_INFO("Gripper check thread cancelled.");
+        // ROS_INFO("Gripper check thread cancelled.");
     }
 }
 
@@ -174,11 +181,9 @@ void SimpleGraspControlServer::updateGrippersCheckLoop(SimpleGraspControlServer 
     float sleepTime = 1.0 / updateRate;
     while (true)
     {
-        ROS_INFO("Debug: calling updateGrippersCheck()");
-
         int check = _this->updateGrippersCheck();
         // on error, or if action finished, quit loop.
-        if ((check < 0) == (check == 1))
+        if ((check < 0) || (check == 1))
         {
             ROS_INFO("Grasp finished, exiting thread loop.");
             return;
@@ -187,11 +192,10 @@ void SimpleGraspControlServer::updateGrippersCheckLoop(SimpleGraspControlServer 
     }
 }
 
-int SimpleGraspControlServer::updateGrippersCheck() {
-
+int SimpleGraspControlServer::updateGrippersCheck()
+{
 	ros::Time now=ros::Time::now();
 	ros::Duration time_since_last_state = now-time_last_gripper_angles;
-
 
     // get current state
     bool valid=false;
@@ -204,19 +208,20 @@ int SimpleGraspControlServer::updateGrippersCheck() {
 
     if (gripper_angles.size() != last_gripper_angles.size())
     {
-        ROS_ERROR("Inconcistency in SimpleGraspControlServer: Gripper states between calls are differently sized.");
+        ROS_ERROR("Inconsistency in SimpleGraspControlServer: Gripper states between calls are differently sized.");
         return -1;
     }
     
     if (gripper_angles.size() != no_move_stat.size())
     {
-        ROS_ERROR("Inconcistency in SimpleGraspControlServer: Gripper states have to be same size as no_move_stat.");
+        ROS_INFO_STREAM("gripper_angles size: "<<gripper_angles.size());   
+        ROS_ERROR("Inconsistency in SimpleGraspControlServer: Gripper states have to be same size as no_move_stat.");
         return -1;
     }
     
     if (move_stat.size() != no_move_stat.size())
     {
-        ROS_ERROR("Inconcistency in SimpleGraspControlServer: move_stat has to be same size as no_move_stat.");
+        ROS_ERROR("Inconsistency in SimpleGraspControlServer: move_stat has to be same size as no_move_stat.");
         return -1;
     }
 
@@ -248,11 +253,10 @@ int SimpleGraspControlServer::updateGrippersCheck() {
         }
     }
 
-	static const int no_moves_still=1;
     bool allJointsStill = true;
     for (int i=0; i<gripper_angles.size(); ++i)
     {
-	    if (no_move_stat[i] < no_moves_still)
+	    if (no_move_stat[i] < NO_MOVE_STILL_CNT)
         {
             allJointsStill=false;
         }
@@ -268,20 +272,21 @@ int SimpleGraspControlServer::updateGrippersCheck() {
         bool oneMoved=false;
         for (int i=0; i < move_stat.size(); ++i)
         {
-                if (move_stat[i] > 0)
-                {
-                    oneMoved=true;
-                    break;
-                }
+            if (move_stat[i] > 0)
+            {
+                oneMoved=true;
+                break;
+            }
         }
         if (!oneMoved)
         {
-            ROS_WARN_STREAM("SimpleGraspControlServer: Detected no gripper to have moved at all, \
-                and hand is still. Are topics properly connected, or is the update rate very high?");
+            ROS_INFO_STREAM("SimpleGraspControlServer: Detected no gripper to have moved yet, "
+                <<"and hand is still.");
         }
         else
         {
-            ROS_INFO("SimpleGraspControlServer: Hand considered still, stopping grip action. Move counts: ");
+            ROS_INFO("SimpleGraspControlServer: Hand considered still, stopping grip action.");
+            ROS_INFO("Move counts: ");
             for (int i=0; i < no_move_stat.size(); ++i) ROS_INFO_STREAM(i<<": "<<no_move_stat[i]);
             finished = true;
             setExecutionFinished(true,true);
@@ -323,6 +328,7 @@ void SimpleGraspControlServer::setExecutionFinished(bool flag, bool success){
 		else current_goal.setAborted();
 		has_goal=false;
 	}
+    if (flag) joint_state_subscriber.setActive(false);
 }
 
 bool SimpleGraspControlServer::executionFinished(bool& success){
