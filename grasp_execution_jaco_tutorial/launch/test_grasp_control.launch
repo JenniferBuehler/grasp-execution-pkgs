@@ -13,7 +13,7 @@
         <arg name="names_config_file" default="$(arg names_config_file)"/>
     </include>
 
-    <include file="$(find grasp_execution)/launch/test_grasp_control.launch">
+    <include file="$(find grasp_execution)/test/test_grasp_control.launch">
         <arg name="closing_action" value="$(arg closing_action)"/>
         <arg name="target_angles" value="$(arg target_angles)"/>
         <arg name="grasp_control_action_topic" value="$(arg grasp_control_action_topic)"/>
