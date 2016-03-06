@@ -59,7 +59,7 @@ void SimpleGraspControlServer::cancelGripperCheckThread()
 }
 
 
-bool SimpleGraspControlServer::canAccept(const ActionGoalHandle& goal)
+bool SimpleGraspControlServer::canAccept(const ActionGoalHandleT& goal)
 {
 	if (!initialized) {
 		ROS_ERROR("Action server not initialised, can't accept goal");
@@ -103,7 +103,7 @@ bool SimpleGraspControlServer::canAccept(const ActionGoalHandle& goal)
     return true;
 }
 
-void SimpleGraspControlServer::actionCallbackImpl(const ActionGoalHandle& goal)
+void SimpleGraspControlServer::actionCallbackImpl(const ActionGoalHandleT& goal)
 {
     // ROS_INFO("SimpleGraspControlServer: Goal accepted");
 
@@ -137,7 +137,7 @@ void SimpleGraspControlServer::actionCallbackImpl(const ActionGoalHandle& goal)
     gripper_check_thread = new architecture_binding::thread(updateGrippersCheckLoop, this, gripper_angles_check_freq);
 }
 
-void SimpleGraspControlServer::actionCancelCallbackImpl(ActionGoalHandle& goal)
+void SimpleGraspControlServer::actionCancelCallbackImpl(ActionGoalHandleT& goal)
 {
     cancelGripperCheckThread();
     joint_state_subscriber.setActive(false);
@@ -198,7 +198,7 @@ int SimpleGraspControlServer::updateGrippersCheck()
     if (MathFunctions::equalFloats(gripper_angles, target_gripper_angles, GOAL_TOLERANCE))
     {
         ROS_INFO("SimpleGraspControlServer: Hand at target state.");
-        currentActionSuccess(true);
+        setExecutionFinished(true);
         target_gripper_angles_mutex.unlock();
         return 1;
     }    
@@ -260,7 +260,7 @@ int SimpleGraspControlServer::updateGrippersCheck()
             ROS_INFO("Move counts: ");
             for (int i=0; i < no_move_stat.size(); ++i) ROS_INFO_STREAM(i<<": "<<no_move_stat[i]);
             finished = true;
-            currentActionSuccess(true);
+            setExecutionFinished(true);
         }
     }
 
@@ -270,6 +270,9 @@ int SimpleGraspControlServer::updateGrippersCheck()
 }
 
 void SimpleGraspControlServer::setExecutionFinished(bool success){
-    currentActionSuccess(success);
     joint_state_subscriber.setActive(false);
+    ResultT graspResult;
+    graspResult.execution_time = ros::Duration(this->timeRunning());
+    graspResult.success=success;
+    currentActionDone(graspResult,actionlib::SimpleClientGoalState::SUCCEEDED);
 }

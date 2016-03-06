@@ -4,8 +4,6 @@
 #define GRASP_EXECUTION_SIMPLEGRASPCONTROLSERVER_H
 
 #include <ros/ros.h>
-#include <actionlib/server/simple_action_server.h>
-#include <actionlib/client/simple_action_client.h>
 
 #include <grasp_execution_msgs/GraspControlAction.h>
 #include <sensor_msgs/JointState.h>
@@ -37,9 +35,10 @@ class SimpleGraspControlServer:
 	typedef GraspControlActionServerT::GoalHandle GoalHandle;
 */
     typedef convenience_ros_functions::ActionServer<grasp_execution_msgs::GraspControlAction> GraspControlActionServerT;
-	typedef GraspControlActionServerT::ActionGoalHandle GoalHandle;
+	typedef GraspControlActionServerT::ActionGoalHandleT ActionGoalHandleT;
+    typedef GraspControlActionServerT::ResultT ResultT;	
 	
-	public:
+    public:
 	/**
      * \param gripper_joint_names names of the joints which are involved in the grasping action.
      *      These are the joints which are checked against the goal state - or if they
@@ -70,9 +69,9 @@ class SimpleGraspControlServer:
 	void shutdownImpl();
 
 
-    virtual bool canAccept(const ActionGoalHandle& goal);
-    virtual void actionCallbackImpl(const ActionGoalHandle& goal);
-    virtual void actionCancelCallbackImpl(ActionGoalHandle& goal);
+    virtual bool canAccept(const ActionGoalHandleT& goal);
+    virtual void actionCallbackImpl(const ActionGoalHandleT& goal);
+    virtual void actionCancelCallbackImpl(ActionGoalHandleT& goal);
 
 
 	
@@ -183,4 +182,3 @@ class SimpleGraspControlServer:
 }  // namespace
 
 #endif // GRASP_EXECUTION_SIMPLEGRASPCONTROLSERVER_H
-
