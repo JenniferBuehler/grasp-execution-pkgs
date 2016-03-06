@@ -30,8 +30,8 @@ int main(int argc, char**argv){
     std::string JOINT_CONTROL_TOPIC="/joint_control";
 	priv.param<std::string>("joint_control_topic", JOINT_CONTROL_TOPIC, JOINT_CONTROL_TOPIC);
 
-	std::string GRASP_ACTION_TOPIC="/grasp_action";
-	priv.param<std::string>("grasp_action_topic", GRASP_ACTION_TOPIC, GRASP_ACTION_TOPIC);
+	std::string GRASP_ACTION_TOPIC="/grasp_control_action";
+	priv.param<std::string>("grasp_control_action_topic", GRASP_ACTION_TOPIC, GRASP_ACTION_TOPIC);
 	
     std::string ROBOT_NAMESPACE;
 	if (!priv.hasParam("robot_namespace"))
@@ -62,7 +62,6 @@ int main(int argc, char**argv){
         ROS_ERROR("Joint names (ArmComponentsNameManager) could not be launched due to missing ROS parameters.");
         return 0;
     }
-    ROS_INFO("Parameters loaded. Now starting the action server.");
 
 	grasp_execution::SimpleGraspControlServer actionServer(
         pub,
@@ -75,9 +74,7 @@ int main(int argc, char**argv){
         NO_MOVE_STILL_CNT,
         CHECK_FINGER_STATE_RATE);
 
-    ROS_INFO("Initializing...");
 	actionServer.init();
-    ROS_INFO("Done.");
 
     // ros::MultiThreadedSpinner spinner(4); // Use 4 threads
     // spinner.spin(); // spin() will not return until the node has been shutdown

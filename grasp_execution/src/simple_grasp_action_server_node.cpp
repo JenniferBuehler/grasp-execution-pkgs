@@ -1,9 +1,9 @@
 #include <grasp_execution/GraspEligibilityChecker.h>
-//#include <grasp_execution/SimpleGraspActionServer.h>
-#include <grasp_execution/GraspActionServer.h>
+#include <grasp_execution/SimpleGraspActionServer.h>
 
-#define DEFAULT_EFFECTOR_POS_TOLERANCE 0.03
+#define DEFAULT_EFFECTOR_POS_TOLERANCE 0.02
 #define DEFAULT_EFFECTOR_ORI_TOLERANCE 0.05
+#define DEFAULT_JOINT_ANGLES_TOLERANCE 0.05
 
 /***
  * Starts up a SimpleGraspActionServer.
@@ -30,9 +30,6 @@ int main(int argc, char**argv){
    	std::string GRASP_ACTION_TOPIC="/grasp_action";
 	priv.param<std::string>("grasp_action_topic", GRASP_ACTION_TOPIC, GRASP_ACTION_TOPIC);
 
-    std::string JOINT_CONTROL_TOPIC="/joint_control";
-	priv.param<std::string>("joint_control_topic", JOINT_CONTROL_TOPIC, JOINT_CONTROL_TOPIC);
-
 	std::string GRASP_CONTROL_ACTION_TOPIC="/grasp_control";
 	priv.param<std::string>("grasp_control_action_topic", GRASP_CONTROL_ACTION_TOPIC, GRASP_CONTROL_ACTION_TOPIC);
 	
@@ -40,20 +37,21 @@ int main(int argc, char**argv){
 	priv.param<double>("effector_pos_tolerance", EFFECTOR_POS_TOLERANCE, EFFECTOR_POS_TOLERANCE);
 	
     double EFFECTOR_ORI_TOLERANCE=DEFAULT_EFFECTOR_ORI_TOLERANCE;
-	priv.param<double>("effector_pos_tolerance", EFFECTOR_ORI_TOLERANCE, EFFECTOR_ORI_TOLERANCE);
-
-
+	priv.param<double>("effector_ori_tolerance", EFFECTOR_ORI_TOLERANCE, EFFECTOR_ORI_TOLERANCE);
+    
+    double JOINT_ANGLES_TOLERANCE=DEFAULT_JOINT_ANGLES_TOLERANCE;
+	priv.param<double>("joint_angles_tolerance", JOINT_ANGLES_TOLERANCE, JOINT_ANGLES_TOLERANCE);
     
 	grasp_execution::GraspEligibilityChecker * _eligibilityChecker = new grasp_execution::GraspEligibilityChecker(
         pub,
-        JOINT_STATES_TOPIC, 
         EFFECTOR_POS_TOLERANCE,
-        EFFECTOR_ORI_TOLERANCE);
+        EFFECTOR_ORI_TOLERANCE,
+        JOINT_ANGLES_TOLERANCE);
 
     typedef architecture_binding::shared_ptr<grasp_execution::GraspEligibilityChecker>::type GraspEligibilityCheckerPtr;
 	GraspEligibilityCheckerPtr eligibilityChecker(_eligibilityChecker);
 
-	grasp_execution::GraspActionServer actionServer(
+	grasp_execution::SimpleGraspActionServer actionServer(
         pub,
         GRASP_ACTION_TOPIC,
         GRASP_CONTROL_ACTION_TOPIC,

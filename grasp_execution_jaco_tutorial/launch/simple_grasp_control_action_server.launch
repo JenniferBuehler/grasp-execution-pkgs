@@ -1,7 +1,7 @@
 <launch>
-    <include file="$(find grasp_execution)/launch/simple_grasp_control_server.launch">
+    <include file="$(find grasp_execution)/launch/simple_grasp_control_action_server.launch">
         <arg name="robot_namespace" value="jaco"/>
-        <arg name="grasp_action_topic" value="/jaco/grasp_execution/grasp"/>
+        <arg name="grasp_control_action_topic" value="/jaco/grasp_execution/grasp_control"/>
         <arg name="joint_control_topic" value="/jaco/joint_control"/>
         <arg name="joint_states_topic" value="/jaco/joint_state"/>
         <arg name="check_movement_rate" value="20"/>

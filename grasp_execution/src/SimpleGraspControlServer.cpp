@@ -27,8 +27,8 @@ SimpleGraspControlServer::SimpleGraspControlServer(
 	joint_state_subscriber(_joints_manager, n,joint_states_topic),
 	initialized(false){
     
-    ROS_INFO_STREAM("SimpleGraspControlServer for action '"
-        << action_topic_name <<"': publishing joint control on " << joint_control_topic);
+//    ROS_INFO_STREAM("SimpleGraspControlServer for action '"
+//        << action_topic_name <<"': publishing joint control on " << joint_control_topic);
     joint_control_pub = n.advertise<sensor_msgs::JointState>(joint_control_topic, 1000, true);
 }
 

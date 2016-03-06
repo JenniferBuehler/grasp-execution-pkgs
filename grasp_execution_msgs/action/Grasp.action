@@ -41,6 +41,11 @@ trajectory_msgs/JointTrajectory gripper_retreat_trajectory
 # GraspData.grasp.pre_grasp_posture to
 # GraspData.grasp.grasp_posture, or the other way round if
 # this is an action to un-grasp.
+# In its simplest form, the first point in this trajectory
+# is the current joint state, and the second point is
+# the target state specified in grasp.grasp.grasp_posture
+# if this is a grasp, or grasp.grasp.pre_grasp_posture if
+# this is an ungrasp.
 trajectory_msgs/JointTrajectory grasp_trajectory
 
 # set to true if you want to use effector_pos_tolerance,

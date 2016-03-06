@@ -27,7 +27,7 @@ int main(int argc, char** argv)
 	priv.param<float>("target_angles", TARGET_ANGLES, TARGET_ANGLES);
 
     std::string GRASP_CONTROL_ACTION_TOPIC = "/grasp_action";
-	priv.param<std::string>("grasp_action_topic", GRASP_CONTROL_ACTION_TOPIC, GRASP_CONTROL_ACTION_TOPIC);
+	priv.param<std::string>("grasp_control_action_topic", GRASP_CONTROL_ACTION_TOPIC, GRASP_CONTROL_ACTION_TOPIC);
 
     // create the action client
     // true causes the client to spin its own thread

@@ -6,7 +6,7 @@
     <arg name="target_angles" default="0.5"/>
 
     # topic where the action server for grasp_execution::GraspControlAction is offered
-    <arg name="grasp_action_topic" default="/grasp_execution/grasp"/>
+    <arg name="grasp_control_action_topic" default="/grasp_execution/grasp_control"/>
     
     # namespace of the robot which is used to load the ArmComponentsNameManager.
     # For this node to work, the parameters must
@@ -18,7 +18,7 @@
     <node name="simple_grasp_control_client" pkg="grasp_execution" type="simple_grasp_control_client" args="" output="screen">
         <param name="closing_action" value="$(arg closing_action)"/>
         <param name="target_angles" value="$(arg target_angles)"/>
-        <param name="grasp_action_topic" value="$(arg grasp_action_topic)"/>
+        <param name="grasp_control_action_topic" value="$(arg grasp_control_action_topic)"/>
         <param name="robot_namespace" value="$(arg robot_namespace)"/>
     </node>
 </launch>

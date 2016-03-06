@@ -6,7 +6,7 @@
     # $(find arm_components_name_manager)/launch/init_params.launch.
     <arg name="robot_namespace"/>
 
-    <arg name="grasp_action_topic" default="/grasp_execution/grasp"/>
+    <arg name="grasp_control_action_topic" default="/grasp_execution/grasp_control"/>
     <arg name="joint_control_topic" default="/joint_control"/>
     <arg name="joint_states_topic" default="/joint_states"/>
     
@@ -31,7 +31,7 @@
 	<node name="simple_grasp_control_server" pkg="grasp_execution" type="simple_grasp_control_server_node" output="screen">
         <param name="joint_states_topic" value="$(arg joint_states_topic)"/>
         <param name="joint_control_topic" value="$(arg joint_control_topic)"/>
-        <param name="grasp_action_topic" value="$(arg grasp_action_topic)"/>
+        <param name="grasp_control_action_topic" value="$(arg grasp_control_action_topic)"/>
         <param name="robot_namespace" value="$(arg robot_namespace)"/>
         <param name="check_movement_rate" value="$(arg check_movement_rate)"/>
         <param name="no_move_tolerance" value="$(arg no_move_tolerance)"/>

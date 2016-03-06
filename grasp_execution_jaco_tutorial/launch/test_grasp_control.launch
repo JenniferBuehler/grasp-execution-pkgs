@@ -1,7 +1,7 @@
 <launch>
     <arg name="closing_action" default="true"/>
     <arg name="target_angles" default="0.5"/>
-    <arg name="grasp_action_topic" default="/jaco/grasp_execution/grasp"/>
+    <arg name="grasp_control_action_topic" default="/jaco/grasp_execution/grasp_control"/>
     <arg name="robot_namespace" default="jaco"/>
     <arg name="load_arm_components_name_manager" default="false"/>
 
@@ -16,7 +16,7 @@
     <include file="$(find grasp_execution)/launch/test_grasp_control.launch">
         <arg name="closing_action" value="$(arg closing_action)"/>
         <arg name="target_angles" value="$(arg target_angles)"/>
-        <arg name="grasp_action_topic" value="$(arg grasp_action_topic)"/>
+        <arg name="grasp_control_action_topic" value="$(arg grasp_control_action_topic)"/>
         <arg name="robot_namespace" value="$(arg robot_namespace)"/>
     </include>
 </launch>

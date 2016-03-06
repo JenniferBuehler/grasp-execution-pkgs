@@ -5,14 +5,14 @@ using convenience_ros_functions::ROSFunctions;
 using grasp_execution::GraspEligibilityChecker;
 
 GraspEligibilityChecker::GraspEligibilityChecker(ros::NodeHandle& node,
-    const std::string& _joint_states_topic,
     const float& _effectorPosAccuracy,
-    const float& _effectorOriAccuracy):
+    const float& _effectorOriAccuracy,
+    const float& _jointAnglesAccuracy):
     effectorPosAccuracy(_effectorPosAccuracy),
     effectorOriAccuracy(_effectorOriAccuracy),
+    jointAnglesAccuracy(_jointAnglesAccuracy),
     joint_states_sub(node)
 {
-    connectSubscriber(_joint_states_topic);
 }
 
 GraspEligibilityChecker::~GraspEligibilityChecker()
@@ -36,23 +36,67 @@ bool GraspEligibilityChecker::checksJointStates()
 {
     return false;
 }
+    
+bool GraspEligibilityChecker::goalJointStatesConsistent(const GraspGoalT& graspGoal,
+        const float useJointAnglesAccuracy) const
+{
+    const manipulation_msgs::Grasp& mgrasp = graspGoal.grasp.grasp;
+    const trajectory_msgs::JointTrajectory traj = graspGoal.grasp_trajectory;
+    if (traj.points.empty())
+    {
+        ROS_ERROR("Trajectory for the grasp is empty");
+        return false;
+    }
+    sensor_msgs::JointState lastTrajPoint;
+    if (!ROSFunctions::getJointStateAt(traj.points.size()-1, traj, lastTrajPoint))
+    {
+        ROS_ERROR("Could not get last joint state of grasp trajectory");
+        return false;
+    }
+    const sensor_msgs::JointState& graspState =
+        graspGoal.is_grasp ? mgrasp.grasp_posture : mgrasp.pre_grasp_posture;
+    int ret = ROSFunctions::equalJointPositions(lastTrajPoint, graspState, useJointAnglesAccuracy);
+    if (ret > 0) return true;
 
-bool GraspEligibilityChecker::executionEligible(const GraspActionGoalT& graspAction){
+    if (ret == -2)
+    {
+        ROS_ERROR("Grasp pose joint state and last trajectory point do not intersect");
+    }
+    else if (ret == -3)
+    {
+        ROS_ERROR("Consistency: intersection of grasp state and last trajectory point not of same size");
+    }
+    else if (ret == -1)
+    {
+        ROS_ERROR("Last trajectory point and grasp pose are not similar enough");
+    }
+    return false; 
+}
 
-    const grasp_execution_msgs::GraspData& grasp = graspAction.grasp;
+bool GraspEligibilityChecker::executionEligible(const GraspGoalT& graspGoal){
+
+    const grasp_execution_msgs::GraspData& grasp = graspGoal.grasp;
     const manipulation_msgs::Grasp& mgrasp = grasp.grasp;
     const geometry_msgs::PoseStamped& graspPose = mgrasp.grasp_pose;
     const std::string& effectorLinkName = grasp.effector_link_name;
 
     float usePosAcc=effectorPosAccuracy;
     float useOriAcc=effectorOriAccuracy;
-    if (graspAction.use_custom_tolerances)
+    float useJointAcc=jointAnglesAccuracy;
+    if (graspGoal.use_custom_tolerances)
     {
-        usePosAcc = graspAction.effector_pos_tolerance;
-        useOriAcc = graspAction.effector_angle_tolerance;
+        usePosAcc = graspGoal.effector_pos_tolerance;
+        useOriAcc = graspGoal.effector_angle_tolerance;
+        useJointAcc = graspGoal.joint_angles_tolerance;
     }
 
-    if (graspAction.is_grasp || !graspAction.ignore_effector_pose_ungrasp){
+    if (!goalJointStatesConsistent(graspGoal, useJointAcc))
+    {
+        ROS_ERROR("Joint states in trajectory and in grasp are not conform");
+        return false;
+    }
+
+    if (graspGoal.is_grasp || !graspGoal.ignore_effector_pose_ungrasp){
         if (!this->graspExecutionEligible(grasp.effector_link_name,
             graspPose, usePosAcc, useOriAcc))
         {

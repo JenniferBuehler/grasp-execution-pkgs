@@ -25,7 +25,9 @@
     </include>
     
     #################################
-    # Launch simple grasp server 
+    # Launch simple grasp and grasp
+    # control servers
     #################################
-    <include file="$(find grasp_execution_jaco_tutorial)/launch/simple_grasp_control_server.launch"/>
+    <include file="$(find grasp_execution_jaco_tutorial)/launch/simple_grasp_control_action_server.launch"/>
+    <include file="$(find grasp_execution_jaco_tutorial)/launch/simple_grasp_action_server.launch"/>
 </launch>
