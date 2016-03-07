@@ -13,6 +13,7 @@ GraspEligibilityChecker::GraspEligibilityChecker(ros::NodeHandle& node,
     jointAnglesAccuracy(_jointAnglesAccuracy),
     joint_states_sub(node)
 {
+    ROSFunctions::initSingleton();
 }
 
 GraspEligibilityChecker::~GraspEligibilityChecker()
@@ -115,9 +116,9 @@ bool GraspEligibilityChecker::graspExecutionEligible(const std::string& effector
     bool printErrors=true;
     float maxWaitTransform=2.0;
     
-    //check if the end effector is at the same pose as it is expected to be.
-    //First, get the transform from the robot pose frame to the effector frame. This transform
-    //corresponds to the absolute effector pose (expressed in the robot position frame).
+    // check if the end effector is at the same pose as it is expected to be.
+    // First, get the transform from the robot pose frame to the effector frame. This transform
+    // corresponds to the absolute effector pose (expressed in the robot position frame).
     geometry_msgs::PoseStamped effectorPose;
     int transRet=ROSFunctions::Singleton()->getTransform(
             graspPose.header.frame_id, effectorLinkFrame,
@@ -142,7 +143,7 @@ bool GraspEligibilityChecker::graspExecutionEligible(const std::string& effector
     {
         
         ROS_ERROR_STREAM("GraspEligibilityChecker: Can't execute the grasp if end effector "
-                <<" is not at required target pose. Tolerances: "
+                <<"is not at required target pose. Tolerances: "
                 <<_effectorPosAccuracy <<", "<< _effectorOriAccuracy);
         ROS_INFO_STREAM(graspPose);
         ROS_INFO_STREAM(effectorPose);

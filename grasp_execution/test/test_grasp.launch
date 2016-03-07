@@ -1,3 +1,8 @@
+<!-- this launch file starts a simple test: a grasp_execution_msgs/Grasp.action 
+     is generated which has as grasp pose the current end effector pose, and then
+     sends a request for this action. Properties of the grasp other than the grasp  
+     pose can be initialzied in the arguments.
+-->
 <launch>
     <arg name="object_name"/>
 
@@ -6,9 +11,6 @@
     # have been launched with a launch file like in
     # $(find arm_components_name_manager)/launch/init_params.launch.
     <arg name="robot_namespace"/>
- 
-    # end effector to be positioned this much above object (z-direction)
-    <arg name="pose_above_object"/>
 
     <arg name="request_object_service_topic" default="/gazebo_objects/get_info"/>
     
@@ -19,16 +21,14 @@
     <arg name="open_angles" default="0.05"/>
     
     # angles to set all the finger joints to when un-grasping
-    <arg name="close_angles" default="0.7"/>
+    <arg name="close_angles" default="0.5"/>
         
     # name of the action (topic where it is available)
-    <arg name="grasp_action_topic" default="/grasp_execution/grasp"/>
-
-    
-    # end effector to be positioned relative to object (x-direction)
-    <arg name="x_from_object" default="0"/>
-    # end effector to be positioned relative to object (y-direction)
-    <arg name="y_from_object" default="0"/>
+    <arg name="grasp_action_topic" default="/jaco/grasp_execution/grasp"/>
+   
+    <arg name="effector_pos_tolerance" default="0.03"/>
+    <arg name="effector_ori_tolerance" default="0.05"/>
+    <arg name="joint_state_tolerance" default="0.05"/>
    
     # launch the node
     <node name="simple_grasp_action_client" pkg="grasp_execution" type="simple_grasp_action_client" args="" output="screen">
@@ -36,11 +36,11 @@
         <param name="request_object_service_topic" value="$(arg request_object_service_topic)"/>
         <param name="robot_namespace" value="$(arg robot_namespace)"/>
         <param name="object_name" value="$(arg object_name)"/>
-        <param name="pose_above_object" value="$(arg pose_above_object)"/>
-        <param name="x_from_object" value="$(arg x_from_object)"/>
-        <param name="y_from_object" value="$(arg y_from_object)"/>
         <param name="grasping_action" value="$(arg grasping_action)"/>
         <param name="open_angles" value="$(arg open_angles)"/>
         <param name="close_angles" value="$(arg close_angles)"/>
+        <param name="effector_pos_tolerance" value="$(arg effector_pos_tolerance)"/>
+        <param name="effector_ori_tolerance" value="$(arg effector_ori_tolerance)"/>
+        <param name="joint_state_tolerance" value="$(arg joint_state_tolerance)"/>
     </node>
 </launch>

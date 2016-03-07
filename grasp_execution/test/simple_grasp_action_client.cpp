@@ -3,6 +3,7 @@
 #include <actionlib/client/terminal_state.h>
 
 #include <arm_components_name_manager/ArmComponentsNameManager.h>
+#include <convenience_ros_functions/ROSFunctions.h>
 
 #include "SimpleGraspGenerator.h"
 #include <object_msgs/Object.h>
@@ -18,8 +19,8 @@ bool getObjectInfo(const std::string& object_name, const std::string& REQUEST_OB
 
 	if (client.call(srv) && srv.response.success)
 	{
-		ROS_INFO("Result:");
-		std::cout<<srv.response<<std::endl;
+		// ROS_INFO("getObjectInfo result:");
+		// std::cout<<srv.response<<std::endl;
 	}
 	else
 	{
@@ -59,12 +60,13 @@ int main(int argc, char** argv)
     double maxWait=5;
     ROS_INFO("Waiting for joint info parameters to be loaded...");
     jointsManager.waitToLoadParameters(1,maxWait); 
-    ROS_INFO("Parameters loaded.");
+    // ROS_INFO("Parameters loaded.");
 
     std::vector<std::string> gripperJoints = jointsManager.getGripperJoints();
     for (int i=0; i<gripperJoints.size(); ++i) ROS_INFO_STREAM("Gripper "<<i<<": "<<gripperJoints[i]);
 
     std::string arm_base_frame = jointsManager.getArmLinks().front();
+    std::string effector_link = jointsManager.getEffectorLink();
  
     bool GRASPING=true;
 	priv.param<bool>("grasping_action", GRASPING, GRASPING);
@@ -77,12 +79,12 @@ int main(int argc, char** argv)
     std::string GRASP_ACTION_TOPIC = "/grasp_action";
 	priv.param<std::string>("grasp_action_topic", GRASP_ACTION_TOPIC, GRASP_ACTION_TOPIC);
 
-    double POSE_ABOVE;
-	priv.param<double>("pose_above_object", POSE_ABOVE, POSE_ABOVE);
-    double POSE_X;
-	priv.param<double>("x_from_object", POSE_X, POSE_X);
-    double POSE_Y;
-	priv.param<double>("y_from_object", POSE_Y, POSE_Y);
+    double EFF_POS_TOL;
+	priv.param<double>("effector_pos_tolerance", EFF_POS_TOL, EFF_POS_TOL);
+    double EFF_ORI_TOL;
+	priv.param<double>("effector_ori_tolerance", EFF_ORI_TOL, EFF_ORI_TOL);
+    double JOINT_ANGLE_TOL;
+	priv.param<double>("joint_angle_tolerance", JOINT_ANGLE_TOL, JOINT_ANGLE_TOL);
         
     object_msgs::Object obj;
    
@@ -105,10 +107,22 @@ int main(int argc, char** argv)
 
     std::string object_frame_id = obj.name;
 
-    grasp_execution::SimpleGraspGenerator graspGen;
-        
+    // get the current end effector pose in the object frame:
+    convenience_ros_functions::ROSFunctions::initSingleton();
+    geometry_msgs::PoseStamped currEffPos;
+    int transRet=convenience_ros_functions::ROSFunctions::Singleton()->getTransform(
+            object_frame_id, effector_link,
+            currEffPos.pose,
+            ros::Time(0),2,true);
+    if (transRet!=0) {
+        ROS_ERROR("Could not get current effector tf transform in object frame.");
+        return 0;
+    }
+    currEffPos.header.stamp=ros::Time::now();
+    currEffPos.header.frame_id=object_frame_id;
+    ROS_INFO_STREAM("Effector currEffPos pose: "<<currEffPos);
+    
     manipulation_msgs::Grasp mgrasp;
-
     bool genGraspSuccess = grasp_execution::SimpleGraspGenerator::generateSimpleGraspFromTop(
         gripperJoints,
         arm_base_frame,
@@ -116,7 +130,7 @@ int main(int argc, char** argv)
         OBJECT_NAME,        
         obj_pose,
         object_frame_id,
-        POSE_ABOVE, POSE_X, POSE_Y,
+        0,0,0,
         OPEN_ANGLES, CLOSE_ANGLES,
         mgrasp);
 
@@ -125,11 +139,24 @@ int main(int argc, char** argv)
         ROS_ERROR("Could not generate grasp");
         return 0;
     }
+    // ROS_INFO_STREAM("generated manipulation_msgs::Grasp: "<<std::endl<<mgrasp);
 
-    ROS_INFO_STREAM("generated manipulation_msgs::Grasp: "<<std::endl<<mgrasp);
+    // overwrite grasp pose with current end effector pose
+    mgrasp.grasp_pose = currEffPos;
 
-    ROS_INFO("END TEST");
-    return 0;
+
+    grasp_execution_msgs::GraspGoal graspGoal;
+    bool isGrasp = true;
+    grasp_execution::SimpleGraspGenerator::generateSimpleGraspGoal(effector_link,
+        mgrasp,0, isGrasp, graspGoal);
+
+    grasp_execution::SimpleGraspGenerator::useCustomTolerances(EFF_POS_TOL,
+        EFF_ORI_TOL, JOINT_ANGLE_TOL, graspGoal);
+    
+    ROS_INFO_STREAM("generated grasp_execution_msgs::Grasp: "<<std::endl<<graspGoal);
+
+  
+
 
     // create the action client
     // true causes the client to spin its own thread
@@ -141,10 +168,12 @@ int main(int argc, char** argv)
     ROS_INFO("Action server started.");
 
 
-    ROS_INFO("Now constructing goal");
-    /*
     ROS_INFO("Now sending goal");
-    ac.sendGoal(goal);
+    ac.sendGoal(graspGoal);
+
+
+
+
 
     //wait for the action to return
     bool finished_before_timeout = ac.waitForResult(ros::Duration(15.0));
@@ -157,5 +186,5 @@ int main(int argc, char** argv)
     else
         ROS_INFO("Action did not finish before the time out.");
 
-    return 0;*/
+    return 0;
 }

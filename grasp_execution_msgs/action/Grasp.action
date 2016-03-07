@@ -85,6 +85,9 @@ float32 joint_angles_tolerance
 # performing the gripper approach, it is at the GraspData.grasp.grasp_pose.
 # If this is an ungrasp action, and ignore_effector_pose_ungrasp is
 # set to true, checking this condition is skipped.
+# This field may not be used by the implementation, because
+# some implementations can use /tf transforms to determine
+# the effector pose.
 geometry_msgs/PoseStamped curr_effector_pose
 
 # The current joint state of the robot. 

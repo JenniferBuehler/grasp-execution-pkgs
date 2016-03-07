@@ -150,6 +150,11 @@ class SimpleGraspControlServer:
      *  This field is updated by updateGrippersCheck which is called at rate gripper_angles_check_freq.
      */
     std::vector<int> no_move_stat;
+
+    /**
+     * Number of times all of the grippers together haven't moved.
+     */
+    int no_move_stat_all;
     
     /*
      *  number of times that movement was recorded for grippers since the goal was accepted.

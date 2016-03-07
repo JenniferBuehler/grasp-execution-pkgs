@@ -21,6 +21,7 @@ SimpleGraspControlServer::SimpleGraspControlServer(
 	GOAL_TOLERANCE(goalTolerance),
 	NO_MOVE_TOLERANCE(noMoveTolerance),
     NO_MOVE_STILL_CNT(noMoveStillCnt),
+    no_move_stat_all(0),
 	gripper_angles_check_freq(checkStateFreq),
     gripper_check_thread(NULL),
     joints_manager(_joints_manager),    
@@ -127,6 +128,7 @@ void SimpleGraspControlServer::actionCallbackImpl(const ActionGoalHandleT& goal)
 
     no_move_stat.clear();
     no_move_stat.assign(joints_manager.numGripperJoints(), 0);
+    no_move_stat_all = 0;
  
     move_stat.clear();
     move_stat.assign(joints_manager.numGripperJoints(), 0);
@@ -239,7 +241,9 @@ int SimpleGraspControlServer::updateGrippersCheck()
     {
         // at least one of the joints must have moved at least a bit.
         // Otherwise it may be that the hand hasn't moved at all since the goal was
-        // accepted.
+        // accepted. Only exception: the object is already grasped and the hand
+        // cannot reach its target state exactly because the object is blocking the fingers.
+        // for this, the no_move_stat_all is used and then the action finishes with a warning.
         bool oneMoved=false;
         for (int i=0; i < move_stat.size(); ++i)
         {
@@ -251,8 +255,19 @@ int SimpleGraspControlServer::updateGrippersCheck()
         }
         if (!oneMoved)
         {
-            ROS_INFO_STREAM("SimpleGraspControlServer: Detected no gripper to have moved yet, "
-                <<"and hand is still.");
+            ++no_move_stat_all;
+            if (no_move_stat_all >= NO_MOVE_STILL_CNT)
+            {
+                ROS_WARN_STREAM("SimpleGraspControlServer: Detected no gripper to have moved yet for a while, "
+                    <<"presuming hand cannot move and is already grasping an object in its initial state.");
+                finished = true;
+                setExecutionFinished(true);
+            }
+            else
+            {
+                ROS_INFO_STREAM("SimpleGraspControlServer: Detected no gripper to have moved yet, "
+                    <<"and hand is still.");
+            }
         }
         else
         {

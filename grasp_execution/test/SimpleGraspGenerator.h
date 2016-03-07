@@ -35,13 +35,16 @@ public:
      *
      * \param joint_names the names of all gripper joints in the order they should
      *      appear in the JointState.
-     * \param arm_base_frame a frame relative to the robot, ideally the base of the arm.
+     * \param robot_link_frame a frame of a link of the robot. The object pose will be transformed
+     *      into this frame. This transformed pose is then used as a base for the target grasp
+     *      pose (\e grasp.grasp_pose). Ideally, choose the base of the arm for this, or any
+     *      other link on the robot which does not change in-between this call and the arm moving to grasp.
      * \param grasp_id the name/ID of the grasp
      * \param object_name the name which is put in the allowed_touch_objects
      */
     static bool generateSimpleGraspFromTop(
         const std::vector<std::string> joint_names,
-        const std::string& arm_base_frame,
+        const std::string& robot_link_frame,
         const std::string& grasp_id,
         const std::string& object_name,
         const geometry_msgs::PoseStamped& object_pose,
@@ -53,11 +56,13 @@ public:
         float grasp_close_angles, //=0.7;
         manipulation_msgs::Grasp& grasp) {
 
+        ROSFunctions::initSingleton();
+
+        //first, transform the object into a frame relative to the robot.
         geometry_msgs::PoseStamped _object_pose=object_pose;
         _object_pose.header.stamp=ros::Time(0); //most recent time for transformPose
         geometry_msgs::PoseStamped aboveObj;
-        //first, transform the object into a frame relative to the robot.
-        if (ROSFunctions::Singleton()->transformPose(_object_pose,arm_base_frame,aboveObj,1)!=0) {
+        if (ROSFunctions::Singleton()->transformPose(_object_pose,robot_link_frame,aboveObj,1)!=0) {
             ROS_ERROR("Test transform failed.");
             return false;
         }
@@ -94,9 +99,9 @@ public:
 
         Eigen::Quaterniond rq;
         tf::quaternionMsgToEigen(aboveObj.pose.orientation,rq);
-        //rotate -90 around y is the orientation we'd like to have, in relation to the object orientation. We assume that the
-        //object orientation is such that the x axis points into its longer side (the long side of the cube) and lies on the ground plane.
-        //orientation: rotate -90 around y is 0, -sqrt(0.5), 0, sqrt(0.5)
+        // rotate -90 around y is the orientation we'd like to have, in relation to the object orientation. We assume that the
+        // object orientation is such that the x axis points into its longer side (the long side of the cube) and lies on the ground plane.
+        // orientation: rotate -90 around y is 0, -sqrt(0.5), 0, sqrt(0.5)
         Eigen::Quaterniond align_ori(sqrt(0.5), 0, -sqrt(0.5), 0); //constructor has w first
         Eigen::Quaterniond rori=rq*align_ori;
         aboveObj.pose.orientation.x=rori.x();
@@ -124,6 +129,69 @@ public:
 
         grasp.allowed_touch_objects.push_back(object_name);
         return true;
+    }
+
+    /**
+     * Generates a simple grasp goal, without gripper_approach_trajectory
+     * and gripper_retreat_trajectory: This is just a grasp where the
+     * effector is positioned correctly and can then grasp the object right away.
+     * Default tolerances are used, so if you want to adapt them, you need
+     * to pass the resulting \e graspGoal through setCustomTolerances().
+     * The current robot state is also not initialized, you have to do this
+     * manually.
+     *
+     * \param isGrasp true if this is a grasp action, false if un-grasp 
+     */
+    static void generateSimpleGraspGoal(const std::string& effectorLink,
+        const manipulation_msgs::Grasp& grasp,
+        const int graspID,
+        bool isGrasp,
+        grasp_execution_msgs::GraspGoal& graspGoal)
+    {
+        graspGoal.grasp.grasp=grasp;
+        graspGoal.grasp.id=graspID;
+        graspGoal.grasp.effector_link_name = effectorLink;
+        graspGoal.is_grasp = isGrasp;
+        graspGoal.ignore_effector_pose_ungrasp = true;
+
+        trajectory_msgs::JointTrajectory graspTrajectory;
+        // the joint names should be the same in pre_grasp_posture
+        // and grasp_posture.
+        graspTrajectory.joint_names = grasp.grasp_posture.name;
+        graspTrajectory.header.stamp = ros::Time::now();
+        trajectory_msgs::JointTrajectoryPoint preGrasp;
+        preGrasp.positions=grasp.pre_grasp_posture.position;
+        preGrasp.velocities=grasp.pre_grasp_posture.velocity;
+        preGrasp.effort=grasp.pre_grasp_posture.effort;
+        trajectory_msgs::JointTrajectoryPoint atGrasp;
+        atGrasp.positions=grasp.grasp_posture.position;
+        atGrasp.velocities=grasp.grasp_posture.velocity;
+        atGrasp.effort=grasp.grasp_posture.effort;
+        if (isGrasp)
+        {
+            graspTrajectory.points.push_back(preGrasp);
+            graspTrajectory.points.push_back(atGrasp);
+        }
+        else
+        {
+            graspTrajectory.points.push_back(atGrasp);
+            graspTrajectory.points.push_back(preGrasp);
+        }
+        graspGoal.grasp_trajectory=graspTrajectory;
+        graspGoal.use_custom_tolerances = false;
+    }
+
+    /**
+     * Adjust fields in \graspGoal to use custom tolerances.
+     */
+    static void useCustomTolerances(const float effector_pos,
+        const float effector_angle, const float joint_angles,
+        grasp_execution_msgs::GraspGoal& graspGoal)
+    {
+        graspGoal.use_custom_tolerances = true;
+        graspGoal.effector_pos_tolerance = effector_pos;
+        graspGoal.effector_angle_tolerance = effector_angle;
+        graspGoal.joint_angles_tolerance = joint_angles;
     }
 
 private:
