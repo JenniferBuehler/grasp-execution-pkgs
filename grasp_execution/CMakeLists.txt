@@ -16,7 +16,9 @@ find_package(catkin REQUIRED COMPONENTS
   convenience_math_functions
   convenience_ros_functions
   object_msgs
+  object_msgs_tools
   eigen_conversions
+  grasp_execution_reach_test
 )
 
 ################################################
@@ -54,8 +56,9 @@ catkin_package(
   CATKIN_DEPENDS control_msgs grasp_execution_msgs roscpp
         std_msgs trajectory_msgs architecture_binding arm_components_name_manager
         convenience_math_functions convenience_ros_functions
-        object_msgs eigen_conversions
+        object_msgs object_msgs_tools eigen_conversions
         actionlib actionlib_msgs
+        grasp_execution_reach_test
 #  DEPENDS system_lib
 )
 
@@ -94,9 +97,13 @@ add_dependencies(simple_grasp_control_client simple_grasp_control_server ${${PRO
 add_executable(simple_grasp_action_client test/simple_grasp_action_client.cpp)
 add_dependencies(simple_grasp_action_client simple_grasp_action_server ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
+add_executable(simple_automated_grasp_execution test/simple_automated_grasp_execution.cpp)
+add_dependencies(simple_automated_grasp_execution simple_grasp_action_server ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+
 target_link_libraries(simple_grasp_control_server
   ${catkin_LIBRARIES}
 )
+
 target_link_libraries(simple_grasp_action_server
   ${catkin_LIBRARIES}
 )
@@ -114,7 +121,12 @@ target_link_libraries(simple_grasp_action_server_node
 target_link_libraries(simple_grasp_control_client
   ${catkin_LIBRARIES}
 )
+
 target_link_libraries(simple_grasp_action_client
+  ${catkin_LIBRARIES}
+)
+
+target_link_libraries(simple_automated_grasp_execution
   ${catkin_LIBRARIES}
 )
 

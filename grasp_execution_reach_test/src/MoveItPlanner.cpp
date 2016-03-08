@@ -12,12 +12,11 @@ using convenience_ros_functions::ROSFunctions;
 
 
 MoveItPlanner::MoveItPlanner(ros::NodeHandle& n,
-    const std::string& _moveit_motion_plan_service_topic,
-    const std::string& _moveit_check_state_validity_service_topic,
-    const std::string& _moveit_planning_scene_topic):
+    const std::string& _moveit_motion_plan_service,
+    const std::string& _moveit_check_state_validity_service):
     node(n),
-    moveit_motion_plan_service_topic(_moveit_motion_plan_service_topic),
-    moveit_check_state_validity_service_topic(_moveit_check_state_validity_service_topic)
+    moveit_motion_plan_service(_moveit_motion_plan_service),
+    moveit_check_state_validity_service(_moveit_check_state_validity_service)
 {
     init();
 }
@@ -30,26 +29,52 @@ MoveItPlanner::~MoveItPlanner()
 bool MoveItPlanner::init(){
     ROS_INFO("Initialising MoveItPlanner");
     ROSFunctions::initSingleton();
-    // state_validity_client=node.serviceClient<moveit_msgs::GetStateValidity>(moveit_check_state_validity_service_topic);
-    motion_plan_client = node.serviceClient<moveit_msgs::GetMotionPlan>(moveit_motion_plan_service_topic);
-    /*if (use_collision_world) {
-        planning_scene_publisher=node.advertise<moveit_msgs::PlanningScene>(moveit_planning_scene_topic, 1);
-    }*/
+    state_validity_client=node.serviceClient<moveit_msgs::GetStateValidity>(moveit_check_state_validity_service);
+    motion_plan_client = node.serviceClient<moveit_msgs::GetMotionPlan>(moveit_motion_plan_service);
     return true;
 }
 
 void MoveItPlanner::shutdown(){
     motion_plan_client.shutdown();
-/*		state_validity_client.shutdown();
-    if (use_collision_world) planning_scene_publisher.shutdown();
-*/
+    state_validity_client.shutdown();
     ROS_INFO("Shutting down MoveItPlanner.");
 }
 
+
 moveit_msgs::MoveItErrorCodes MoveItPlanner::requestTrajectory(
+	const geometry_msgs::PoseStamped& robot_pose, 
+	const geometry_msgs::PoseStamped& target_pose, 
+	float armReachSpan,
+    const std::string& planning_group, 
+	const moveit_msgs::Constraints& goal_constraints,
+    const moveit_msgs::Constraints * pathConstraints,  
+	const sensor_msgs::JointState& startState,
+    moveit_msgs::RobotTrajectory& resultTraj) {
+
+	moveit_msgs::WorkspaceParameters wspace;
+	if (!makeWorkspace(robot_pose,target_pose,armReachSpan,wspace)) {
+		ROS_ERROR("Could not create MoveIt workspace");
+		ROS_ERROR_STREAM("Start pose: "<<robot_pose);
+		ROS_ERROR_STREAM("Target: "<<target_pose);
+		moveit_msgs::MoveItErrorCodes ret;
+		ret.val=moveit_msgs::MoveItErrorCodes::FAILURE;
+		return ret;
+	}
+
+	//ROS_INFO("Made workspace: "); ROS_INFO_STREAM(wspace);
+
+	std::vector<moveit_msgs::Constraints> constr;
+	constr.push_back(goal_constraints);
+	moveit_msgs::MoveItErrorCodes error_code=motionRequest(planning_group, constr, startState, wspace, NULL, pathConstraints,resultTraj);
+	
+	return error_code;
+}
+
+
+moveit_msgs::MoveItErrorCodes MoveItPlanner::requestTrajectoryForMobileRobot(
 	const geometry_msgs::PoseStamped& start_pose, 
-	const geometry_msgs::PoseStamped& target, 
-	float reachOutDist, const std::string& planning_group, 
+	const geometry_msgs::PoseStamped& target_pose, 
+	float armReachSpan, const std::string& planning_group, 
 	const moveit_msgs::Constraints& goal_constraints,
     const moveit_msgs::Constraints * pathConstraints,  
 	const sensor_msgs::JointState& startState,
@@ -57,10 +82,10 @@ moveit_msgs::MoveItErrorCodes MoveItPlanner::requestTrajectory(
     moveit_msgs::RobotTrajectory& resultTraj) {
 
 	moveit_msgs::WorkspaceParameters wspace;
-	if (!makeWorkspace(start_pose,target,reachOutDist,wspace)) {
+	if (!makeWorkspace(start_pose,target_pose,armReachSpan,wspace)) {
 		ROS_ERROR("Could not create MoveIt workspace");
 		ROS_ERROR_STREAM("Start pose: "<<start_pose);
-		ROS_ERROR_STREAM("Target: "<<target);
+		ROS_ERROR_STREAM("Target: "<<target_pose);
 		moveit_msgs::MoveItErrorCodes ret;
 		ret.val=moveit_msgs::MoveItErrorCodes::FAILURE;
 		return ret;
@@ -179,8 +204,9 @@ double pickMax(const double pos, const double rel, const double extend, const do
 }
 
 
-bool MoveItPlanner::makeWorkspace(const geometry_msgs::PoseStamped& from, const geometry_msgs::PoseStamped& to, 
-	float reachOutDist, moveit_msgs::WorkspaceParameters& wspace){
+bool MoveItPlanner::makeWorkspace(const geometry_msgs::PoseStamped& from,
+    const geometry_msgs::PoseStamped& to, 
+	float armReachSpan, moveit_msgs::WorkspaceParameters& wspace){
 
 	static const float maxWait=2.0;
 	static const bool latestTime=false;
@@ -196,12 +222,12 @@ bool MoveItPlanner::makeWorkspace(const geometry_msgs::PoseStamped& from, const 
 
 	wspace.header=from.header;
 	double minExt=0.5;
-	wspace.min_corner.x= pickMin(from.pose.position.x, rel.position.x,reachOutDist,minExt);
-	wspace.min_corner.y= pickMin(from.pose.position.y, rel.position.y,reachOutDist,minExt);
-	wspace.min_corner.z= pickMin(from.pose.position.z, rel.position.z,reachOutDist,minExt);
-	wspace.max_corner.x= pickMax(from.pose.position.x, rel.position.x,reachOutDist,minExt);
-	wspace.max_corner.y= pickMax(from.pose.position.y, rel.position.y,reachOutDist,minExt);
-	wspace.max_corner.z= pickMax(from.pose.position.z, rel.position.z,reachOutDist,minExt);
+	wspace.min_corner.x= pickMin(from.pose.position.x, rel.position.x,armReachSpan,minExt);
+	wspace.min_corner.y= pickMin(from.pose.position.y, rel.position.y,armReachSpan,minExt);
+	wspace.min_corner.z= pickMin(from.pose.position.z, rel.position.z,armReachSpan,minExt);
+	wspace.max_corner.x= pickMax(from.pose.position.x, rel.position.x,armReachSpan,minExt);
+	wspace.max_corner.y= pickMax(from.pose.position.y, rel.position.y,armReachSpan,minExt);
+	wspace.max_corner.z= pickMax(from.pose.position.z, rel.position.z,armReachSpan,minExt);
 
 	return true;
 }

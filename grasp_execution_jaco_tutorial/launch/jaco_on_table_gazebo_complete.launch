@@ -1,0 +1,17 @@
+<launch>
+    # Load the grasp fix plugin for gazebo?
+    <arg name="load_grasp_fix" default="false"/>
+
+    #################################
+    # Launch Jaco in Gazebo with the
+    # object information pipeline
+    #################################
+    <include file="$(find grasp_execution_jaco_tutorial)/launch/jaco_on_table_gazebo_objects_controlled.launch">
+        <arg name="load_grasp_fix" value="$(arg load_grasp_fix)"/>
+    </include>
+
+    #########################################
+    # Launch MoveIt component for Jaco
+    ########################################
+    <include file="$(find jaco_on_table_moveit)/launch/jaco_on_table_moveit.launch"/>
+</launch>
