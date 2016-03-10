@@ -91,7 +91,7 @@ bool SimpleGraspControlServer::canAccept(const ActionGoalHandleT& goal)
 	sensor_msgs::JointState goal_state=goal.getGoal()->target_joint_state;
 
 	std::vector<float> _target_gripper_angles;
-    if (!joints_manager.extractFromJointState(goal_state, 2, _target_gripper_angles))
+    if (!joints_manager.extractFromJointState(goal_state, 2, _target_gripper_angles, 0))
     {
 		ROS_ERROR("SimpleGraspControlServer: Not all gripper joints specified in target state.");
         joint_state_subscriber.setActive(false);
@@ -114,7 +114,7 @@ void SimpleGraspControlServer::actionCallbackImpl(const ActionGoalHandleT& goal)
     // subset of target joint state only containing the
     // gripper joints (just to make sure possibly existent other joints are filtered out)
     sensor_msgs::JointState goal_state_subset;
-    joints_manager.copyToJointState(goal_state_subset, 2, &target_gripper_angles);
+    joints_manager.copyToJointState(goal_state_subset, 2, &target_gripper_angles, 0, true);
     target_gripper_angles_mutex.unlock();
 
     while (joint_control_pub.getNumSubscribers() == 0)

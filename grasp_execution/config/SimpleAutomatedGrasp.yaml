@@ -29,11 +29,24 @@ effector_pos_tolerance: 0.04
 effector_ori_tolerance: 2
 joint_state_tolerance: 0.05
 
-# name of the action (topic where it is available)
-grasp_action_topic: /jaco/grasp_execution/grasp
+# the span of the arm (from the arm base) when it's
+# stretched out at its max
+arm_reach_span: 2
+
+# MoveIt! planning group to use for motion planning
+planning_group: Arm
+
+# name of the joint states topic
+joint_states_topic: /jaco/joint_state
+
+# name of the grasp action (topic where it is available)
+grasp_action_name: /jaco/grasp_execution/grasp
+
+# name of the joint trajectory action (topic where it is available)
+joint_trajectory_action_name: /jaco/joint_trajectory_action
 
 # name where the object information service is available
-request_object_service_topic: /gazebo_objects/get_info
+request_object_service: /gazebo_objects/get_info
 
 # motion plan service of moveit (to plan a kinematic path)
 moveit_motion_plan_service: /plan_kinematic_path

@@ -15,6 +15,7 @@ find_package(catkin REQUIRED COMPONENTS
   tf
   trajectory_msgs
   convenience_ros_functions
+  shape_tools
 )
 
 ## System dependencies are found with CMake's conventions
@@ -39,7 +40,7 @@ catkin_package(
   LIBRARIES grasp_execution_reach_test
   CATKIN_DEPENDS actionlib actionlib_msgs eigen_conversions grasp_execution_msgs
         manipulation_msgs moveit_ros_planning_interface roscpp tf trajectory_msgs
-        convenience_ros_functions
+        convenience_ros_functions shape_tools
 #  DEPENDS system_lib
 )
 

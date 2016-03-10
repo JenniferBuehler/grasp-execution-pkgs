@@ -10,6 +10,7 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   actionlib actionlib_msgs
   std_msgs
+  control_msgs
   trajectory_msgs
   architecture_binding
   arm_components_name_manager
@@ -54,7 +55,7 @@ catkin_package(
   INCLUDE_DIRS include
   LIBRARIES simple_grasp_control_server simple_grasp_action_server 
   CATKIN_DEPENDS control_msgs grasp_execution_msgs roscpp
-        std_msgs trajectory_msgs architecture_binding arm_components_name_manager
+        std_msgs control_msgs trajectory_msgs architecture_binding arm_components_name_manager
         convenience_math_functions convenience_ros_functions
         object_msgs object_msgs_tools eigen_conversions
         actionlib actionlib_msgs

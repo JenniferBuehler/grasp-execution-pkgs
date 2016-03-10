@@ -4,24 +4,29 @@
 
 #include <arm_components_name_manager/ArmComponentsNameManager.h>
 #include <convenience_ros_functions/ROSFunctions.h>
+#include <convenience_ros_functions/RobotInfo.h>
+
 #include "SimpleGraspGenerator.h"
 #include <object_msgs/Object.h>
 #include <object_msgs/ObjectInfo.h>
 #include <object_msgs_tools/ObjectFunctions.h>
-
 #include <grasp_execution_reach_test/MoveItPlanner.h>
+
+#include <control_msgs/FollowJointTrajectoryAction.h>
+
 
 using object_msgs_tools::ObjectFunctions;
 using grasp_execution_reach_test::MoveItPlanner;
+using convenience_ros_functions::RobotInfo;
 
 /**
  * \param timeout_wait_object wait this amount of seconds maximum until cube is there.
  *      This is useful if it has been spawned at the same time the node has been launched.
  */
-bool getObjectPose(const std::string& object_name, const std::string& REQUEST_OBJECTS_TOPIC, const float timeout_wait_object, geometry_msgs::PoseStamped& pose)
+bool getObjectPose(const std::string& object_name, const std::string& REQUEST_OBJECTS_SERVICE, const float timeout_wait_object, geometry_msgs::PoseStamped& pose)
 {
 	ros::NodeHandle n;
-	ros::ServiceClient client = n.serviceClient<object_msgs::ObjectInfo>(REQUEST_OBJECTS_TOPIC);
+	ros::ServiceClient client = n.serviceClient<object_msgs::ObjectInfo>(REQUEST_OBJECTS_SERVICE);
 	object_msgs::ObjectInfo srv;
 	srv.request.name = object_name;
     srv.request.get_geometry=false;
@@ -43,7 +48,7 @@ bool getObjectPose(const std::string& object_name, const std::string& REQUEST_OB
     }
     if (!success)
     {
-        ROS_ERROR("Failed to call service %s, error code: %i",REQUEST_OBJECTS_TOPIC.c_str(),srv.response.error_code);
+        ROS_ERROR("Failed to call service %s, error code: %i",REQUEST_OBJECTS_SERVICE.c_str(),srv.response.error_code);
         return false;
     }
     return ObjectFunctions::getObjectPose(srv.response.object,pose);
@@ -82,8 +87,9 @@ int main(int argc, char** argv)
 
     std::vector<std::string> gripperJoints = jointsManager.getGripperJoints();
     for (int i=0; i<gripperJoints.size(); ++i) ROS_INFO_STREAM("Gripper "<<i<<": "<<gripperJoints[i]);
+    // std::vector<std::string> armJoints = joints.getArmJoints();
 
-    std::string arm_base_frame = jointsManager.getArmLinks().front();
+    std::string arm_base_link = jointsManager.getArmLinks().front();
     std::string effector_link = jointsManager.getEffectorLink();
  
     bool GRASPING=true;
@@ -110,23 +116,34 @@ int main(int argc, char** argv)
 	priv.param<double>("joint_angle_tolerance", JOINT_ANGLE_TOL, JOINT_ANGLE_TOL);
    
 
-	std::string REQUEST_OBJECTS_TOPIC="world/request_object";
-	priv.param<std::string>("request_object_service_topic", REQUEST_OBJECTS_TOPIC, REQUEST_OBJECTS_TOPIC);
+	std::string REQUEST_OBJECTS_SERVICE="world/request_object";
+	priv.param<std::string>("request_object_service", REQUEST_OBJECTS_SERVICE, REQUEST_OBJECTS_SERVICE);
+    
+    std::string JOINT_STATES_TOPIC = "/joint_states";
+	priv.param<std::string>("joint_states_topic", JOINT_STATES_TOPIC, JOINT_STATES_TOPIC);
 
-    std::string GRASP_ACTION_TOPIC = "/grasp_action";
-	priv.param<std::string>("grasp_action_topic", GRASP_ACTION_TOPIC, GRASP_ACTION_TOPIC);
+    std::string GRASP_ACTION_NAME = "/grasp_action";
+	priv.param<std::string>("grasp_action_name", GRASP_ACTION_NAME, GRASP_ACTION_NAME);
+    
+    std::string JOINT_TRAJECTORY_ACTION_NAME = "/joint_trajectory_action";
+	priv.param<std::string>("joint_trajectory_action_name", JOINT_TRAJECTORY_ACTION_NAME, JOINT_TRAJECTORY_ACTION_NAME);
 
 	std::string MOVEIT_MOTION_PLAN_SERVICE="/plan_kinematic_path";
 	priv.param<std::string>("moveit_motion_plan_service", MOVEIT_MOTION_PLAN_SERVICE, MOVEIT_MOTION_PLAN_SERVICE);
 
 	std::string MOVEIT_STATE_VALIDITY_SERVICE="/check_state_validity";
 	priv.param<std::string>("moveit_state_validity_service", MOVEIT_STATE_VALIDITY_SERVICE, MOVEIT_STATE_VALIDITY_SERVICE);
+
+    double ARM_REACH_SPAN = 2;
+	priv.param<double>("arm_reach_span", ARM_REACH_SPAN, ARM_REACH_SPAN);
+    std::string PLANNING_GROUP="Arm";
+	priv.param<std::string>("planning_group", PLANNING_GROUP, PLANNING_GROUP);
  
     /////////// Get object pose  ///////////////////
         
     geometry_msgs::PoseStamped obj_pose;
     float maxWaitObject=2; 
-    if (!getObjectPose(OBJECT_NAME, REQUEST_OBJECTS_TOPIC, maxWaitObject, obj_pose))
+    if (!getObjectPose(OBJECT_NAME, REQUEST_OBJECTS_SERVICE, maxWaitObject, obj_pose))
     {
         ROS_ERROR("Could not get pose of object %s", OBJECT_NAME.c_str());
         return 0;
@@ -139,7 +156,7 @@ int main(int argc, char** argv)
     manipulation_msgs::Grasp mgrasp;
     bool genGraspSuccess = grasp_execution::SimpleGraspGenerator::generateSimpleGraspFromTop(
         gripperJoints,
-        arm_base_frame,
+        arm_base_link,
         "TestGrasp",
         OBJECT_NAME,        
         obj_pose,
@@ -166,50 +183,114 @@ int main(int argc, char** argv)
     
     ROS_INFO_STREAM("generated grasp_execution_msgs::Grasp: "<<std::endl<<graspGoal);
 
+
+
     /////////// Do trajectory planning to reach  ///////////////////
+    
     MoveItPlanner trajectoryPlanner(pub, 
 	        MOVEIT_MOTION_PLAN_SERVICE,
 	        MOVEIT_STATE_VALIDITY_SERVICE);
+   
+    // build planning constraints:
+    // XXX TODO parameterize!
+    float plan_eff_pos_tol = EFF_POS_TOL;
+    float plan_eff_ori_tol = EFF_ORI_TOL;
+    int type = 0; // 0 = only position, 1 = pos and ori, 2 = only ori
+    moveit_msgs::Constraints goal_constraints = trajectoryPlanner.getPoseConstraint(effector_link,
+        mgrasp.grasp_pose, plan_eff_pos_tol, plan_eff_ori_tol, type); 
+    
 
-/*    moveit_msgs::MoveItErrorCodes moveitRet = trajectoryPlanner.requestTrajectory(
-        const geometry_msgs::PoseStamped& robot_pose,
-        const geometry_msgs::PoseStamped& target_pose,
-        float armReachSpan, const std::string& planning_group,
-        const moveit_msgs::Constraints& goal_constraints,
-        const moveit_msgs::Constraints * pathConstraints,
-        const sensor_msgs::JointState& startState,
-        moveit_msgs::RobotTrajectory& resultTraj);
-*/
+    // get the current arm base pose in the object frame. This is needed
+    // to generate MoveIt! workspace. This can be in any frame, it can also
+    // be the object frame since the robot is not moving.
+    convenience_ros_functions::ROSFunctions::initSingleton();
+    geometry_msgs::PoseStamped currBasePose;
+    int transRet=convenience_ros_functions::ROSFunctions::Singleton()->getTransform(
+            object_frame_id, arm_base_link,
+            currBasePose.pose,
+            ros::Time(0),2,true);
+    if (transRet!=0) {
+        ROS_ERROR("Could not get current effector tf transform in object frame.");
+        return 0;
+    }
+    currBasePose.header.stamp=ros::Time::now();
+    currBasePose.header.frame_id=object_frame_id;
+    ROS_INFO_STREAM("Effector currBasePose pose: "<<currBasePose);
+ 
+    // request joint trajectory
+    RobotInfo robotInfo;
+    sensor_msgs::JointState currArmJointState = robotInfo.getCurrentJointState(JOINT_STATES_TOPIC, pub);
+    jointsManager.extractFromJointState(currArmJointState,0,currArmJointState);
+    ROS_INFO_STREAM("Current arm joint state: "<<currArmJointState);
+
+    moveit_msgs::RobotTrajectory robotTrajectory;
+    moveit_msgs::MoveItErrorCodes moveitRet = trajectoryPlanner.requestTrajectory(
+        currBasePose,
+        ARM_REACH_SPAN,
+        PLANNING_GROUP,
+        goal_constraints,
+        NULL,
+        currArmJointState,
+        robotTrajectory);
+
+    if (moveitRet.val != moveit_msgs::MoveItErrorCodes::SUCCESS)
+    {
+        ROS_ERROR("Could not plan joint trajectory");
+        return 0;
+    }
 
     /////////// Execute joint trajectory  ///////////////////
 
+    ROS_INFO("Now constructing joint trajectory goal");
 
+    // send a goal to the action
+    control_msgs::FollowJointTrajectoryGoal jtGoal;
+    jtGoal.trajectory = robotTrajectory.joint_trajectory;
+
+    // create the action client
+    actionlib::SimpleActionClient<control_msgs::FollowJointTrajectoryAction> jtac(JOINT_TRAJECTORY_ACTION_NAME, true);
+    ROS_INFO_STREAM("Waiting for action server to start: "<< JOINT_TRAJECTORY_ACTION_NAME);
+    // wait for the action server to start
+    jtac.waitForServer();  // will wait for infinite time
+    ROS_INFO("Joint trajectory action server has started. Now sending goal");
+    jtac.sendGoal(jtGoal);
+
+    //wait for the action to return
+    bool finished_before_timeout = jtac.waitForResult(ros::Duration(15.0));
+    if (finished_before_timeout)
+    {
+        actionlib::SimpleClientGoalState state = jtac.getState();
+        ROS_INFO("Action finished: %s",state.toString().c_str());
+    }
+    else
+    {
+        ROS_INFO("Action did not finish before the time out.");
+        return 0;
+    }
     
     /////////// Send grasp execution action request  ///////////////////
 
     // create the action client
     // true causes the client to spin its own thread
-    actionlib::SimpleActionClient<grasp_execution_msgs::GraspAction> ac(GRASP_ACTION_TOPIC, true);
+    actionlib::SimpleActionClient<grasp_execution_msgs::GraspAction> gac(GRASP_ACTION_NAME, true);
 
-    ROS_INFO("Waiting for action server to start: %s", GRASP_ACTION_TOPIC.c_str());
+    ROS_INFO_STREAM("Waiting for action server to start: "<< GRASP_ACTION_NAME);
     // wait for the action server to start
-    ac.waitForServer(); //will wait for infinite time
-    ROS_INFO("Action server started.");
-
-
-    ROS_INFO("Now sending goal");
-    ac.sendGoal(graspGoal);
+    gac.waitForServer(); //will wait for infinite time
+    ROS_INFO("Action server started. Now sending goal");
+    gac.sendGoal(graspGoal);
 
     //wait for the action to return
-    bool finished_before_timeout = ac.waitForResult(ros::Duration(15.0));
-
+    finished_before_timeout = gac.waitForResult(ros::Duration(15.0));
     if (finished_before_timeout)
     {
-        actionlib::SimpleClientGoalState state = ac.getState();
+        actionlib::SimpleClientGoalState state = gac.getState();
         ROS_INFO("Action finished: %s",state.toString().c_str());
     }
     else
+    {
         ROS_INFO("Action did not finish before the time out.");
-
+        return 0;
+    }
     return 0;
 }
