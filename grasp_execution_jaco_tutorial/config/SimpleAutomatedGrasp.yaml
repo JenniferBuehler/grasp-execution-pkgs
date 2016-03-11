@@ -8,13 +8,13 @@ object_name: cube1
 robot_namespace: jaco
 
 # end effector to be positioned this much above object (z-direction)
-pose_above_object: 0.2
+pose_above_object: 0.16
 
 # end effector to be positioned relative to object (x-direction)
-x_from_object: 0
+x_from_object: 0.0
 
 # end effector to be positioned relative to object (y-direction)
-y_from_object: 0
+y_from_object: -0.02
 
 # true if this is a grasp, false if it is an un-grasp
 grasping_action: true
@@ -23,10 +23,10 @@ grasping_action: true
 open_angles: 0.05
 
 # angles to set all the finger joints to when un-grasping
-close_angles: 0.5
+close_angles: 0.6
 
 effector_pos_tolerance: 0.04
-effector_ori_tolerance: 2
+effector_ori_tolerance: 0.1
 joint_state_tolerance: 0.05
 
 # the span of the arm (from the arm base) when it's

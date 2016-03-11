@@ -84,8 +84,8 @@ public:
         _y*=pose_y_from_object;
         _z*=pose_above_object;
 
-        ROS_INFO_STREAM("Generating grasp pose "<<aboveObj);	
-        ROS_INFO("Left/right: %f/%f",pose_x_from_object,pose_y_from_object);
+        // ROS_INFO_STREAM("Generating grasp pose "<<aboveObj);	
+        // ROS_INFO("Left/right: %f/%f",pose_x_from_object,pose_y_from_object);
         
         grasp.id=grasp_id;
         grasp.pre_grasp_posture=simpleGrasp(joint_names, grasp_open_angles); //sensor_msgs::JointState, hand posture for the pre-grasp
@@ -120,7 +120,7 @@ public:
         }
 
         grasp.grasp_pose=aboveObj; //geometry_msgs::PoseStamped, effector pose for the grasp
-        ROS_INFO_STREAM("Final grasp pose "<<grasp.grasp_pose.pose);
+        // ROS_INFO_STREAM("Final grasp pose "<<grasp.grasp_pose.pose);
         
         grasp.grasp_quality=0.5; //probability of success
         //grasp.approach= //manipulation_msgs::GripperTranslation

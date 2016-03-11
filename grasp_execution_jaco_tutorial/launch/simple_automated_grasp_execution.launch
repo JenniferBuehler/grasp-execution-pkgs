@@ -1,0 +1,22 @@
+<!-- Launches$(find grasp_execution)/launch/simple_automated_grasp_execution.launch -->
+<launch>
+    # Configuration file for the generation of the simple grasp and other
+    # parameters for execution.
+    <arg name="config_file" default="$(find grasp_execution_jaco_tutorial)/config/SimpleAutomatedGrasp.yaml"/>
+  
+    # the frame where the cube will be spawned
+    <arg name="gazebo_spawn_frame" default="robot_base"/>    
+    <arg name="cube_name" default="cube1"/>
+    <arg name="cube_x" default="0.2"/>
+    <arg name="cube_y" default="0"/>
+    <arg name="cube_z" default="0.76"/>
+
+    <include file="$(find grasp_execution)/launch/simple_automated_grasp_execution.launch">
+        <arg name="config_file" value="$(arg config_file)"/>
+        <arg name="cube_name" value="$(arg cube_name)"/>
+        <arg name="gazebo_spawn_frame" value="$(arg gazebo_spawn_frame)"/>
+        <arg name="cube_x" value="$(arg cube_x)"/>
+        <arg name="cube_y" value="$(arg cube_y)"/>
+        <arg name="cube_z" value="$(arg cube_z)"/>
+    </include>    
+</launch>

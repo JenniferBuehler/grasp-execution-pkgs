@@ -59,8 +59,8 @@ moveit_msgs::MoveItErrorCodes MoveItPlanner::requestTrajectory(
 		ret.val=moveit_msgs::MoveItErrorCodes::FAILURE;
 		return ret;
 	}
-	ROS_INFO_STREAM("Using workspace: "<<wspace);
-    ROS_INFO_STREAM("Requesting trajectory from state: "<<start_state);
+	// ROS_INFO_STREAM("Using workspace: "<<wspace);
+    // ROS_INFO_STREAM("Requesting trajectory from state: "<<start_state);
 
 	std::vector<moveit_msgs::Constraints> constr;
 	constr.push_back(goal_constraints);

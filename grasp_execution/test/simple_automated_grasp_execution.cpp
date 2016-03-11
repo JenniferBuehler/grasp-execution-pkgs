@@ -181,8 +181,8 @@ int main(int argc, char** argv)
     grasp_execution::SimpleGraspGenerator::useCustomTolerances(EFF_POS_TOL,
         EFF_ORI_TOL, JOINT_ANGLE_TOL, graspGoal);
     
-    ROS_INFO_STREAM("generated grasp_execution_msgs::Grasp: "<<std::endl<<graspGoal);
-
+    ROS_INFO("################################");
+    ROS_INFO_STREAM("Generated grasp_execution_msgs::Grasp: "<<std::endl<<graspGoal);
 
 
     /////////// Do trajectory planning to reach  ///////////////////
@@ -193,9 +193,9 @@ int main(int argc, char** argv)
    
     // build planning constraints:
     // XXX TODO parameterize!
-    float plan_eff_pos_tol = EFF_POS_TOL;
-    float plan_eff_ori_tol = EFF_ORI_TOL;
-    int type = 0; // 0 = only position, 1 = pos and ori, 2 = only ori
+    float plan_eff_pos_tol = EFF_POS_TOL / 2.0;
+    float plan_eff_ori_tol = EFF_ORI_TOL / 2.0;
+    int type = 1; // 0 = only position, 1 = pos and ori, 2 = only ori
     moveit_msgs::Constraints goal_constraints = trajectoryPlanner.getPoseConstraint(effector_link,
         mgrasp.grasp_pose, plan_eff_pos_tol, plan_eff_ori_tol, type); 
     
@@ -215,13 +215,13 @@ int main(int argc, char** argv)
     }
     currBasePose.header.stamp=ros::Time::now();
     currBasePose.header.frame_id=object_frame_id;
-    ROS_INFO_STREAM("Effector currBasePose pose: "<<currBasePose);
+    // ROS_INFO_STREAM("Effector currBasePose pose: "<<currBasePose);
  
     // request joint trajectory
     RobotInfo robotInfo;
     sensor_msgs::JointState currArmJointState = robotInfo.getCurrentJointState(JOINT_STATES_TOPIC, pub);
     jointsManager.extractFromJointState(currArmJointState,0,currArmJointState);
-    ROS_INFO_STREAM("Current arm joint state: "<<currArmJointState);
+    // ROS_INFO_STREAM("Current arm joint state: "<<currArmJointState);
 
     moveit_msgs::RobotTrajectory robotTrajectory;
     moveit_msgs::MoveItErrorCodes moveitRet = trajectoryPlanner.requestTrajectory(
@@ -238,6 +238,10 @@ int main(int argc, char** argv)
         ROS_ERROR("Could not plan joint trajectory");
         return 0;
     }
+
+
+    ROS_INFO("############  Resulting joint trajectory ################");
+    ROS_INFO_STREAM(robotTrajectory.joint_trajectory);
 
     /////////// Execute joint trajectory  ///////////////////
 

@@ -1,0 +1,55 @@
+# name of the object to grasp
+object_name: the-object-name 
+
+# namespace of the robot which is used to load the ArmComponentsNameManager.
+# For this node to work, the parameters must
+# have been launched with a launch file like in
+# $(find arm_components_name_manager)/launch/init_params.launch.
+robot_namespace: the-robot-namespace
+
+# end effector to be positioned this much above object (z-direction)
+pose_above_object: 0.1
+
+# end effector to be positioned relative to object (x-direction)
+x_from_object: 0
+
+# end effector to be positioned relative to object (y-direction)
+y_from_object: 0
+
+# true if this is a grasp, false if it is an un-grasp
+grasping_action: true
+
+# angles to set all the finger joints to when grasping
+open_angles: 0.05
+
+# angles to set all the finger joints to when un-grasping
+close_angles: 0.6
+
+effector_pos_tolerance: 0.04
+effector_ori_tolerance: 0.1
+joint_state_tolerance: 0.05
+
+# the span of the arm (from the arm base) when it's
+# stretched out at its max
+arm_reach_span: 2
+
+# MoveIt! planning group to use for motion planning
+planning_group: the-moveit-planning-group-for-arm
+
+# name of the joint states topic
+joint_states_topic: /joint_states
+
+# name of the grasp action (topic where it is available)
+grasp_action_name: /grasp_execution/grasp
+
+# name of the joint trajectory action (topic where it is available)
+joint_trajectory_action_name: /joint_trajectory_action
+
+# name where the object information service is available
+request_object_service: /gazebo_objects/get_info
+
+# motion plan service of moveit (to plan a kinematic path)
+moveit_motion_plan_service: /plan_kinematic_path
+
+# state validity checking service of moveit
+moveit_state_validity_service: /check_state_validity
