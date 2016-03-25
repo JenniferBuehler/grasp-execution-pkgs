@@ -75,9 +75,9 @@ bool SimpleGraspControlServer::canAccept(const ActionGoalHandleT& goal)
 	}
     
     joint_state_subscriber.setActive(true);
-    ROS_INFO("Waiting to obtain the current state of the gripper...");
+    ROS_INFO("SimpleGraspControlServer: Waiting to obtain the current state of the gripper...");
     joint_state_subscriber.waitForUpdate();
-    ROS_INFO("Obtained most recent joint state.");
+    ROS_INFO("SimpleGraspControlServer: Obtained most recent joint state.");
 	
 	bool valid;
 	last_gripper_angles=joint_state_subscriber.gripperAngles(valid);
@@ -272,8 +272,9 @@ int SimpleGraspControlServer::updateGrippersCheck()
         else
         {
             ROS_INFO("SimpleGraspControlServer: Hand considered still, stopping grip action.");
-            ROS_INFO("Move counts: ");
+            /*ROS_INFO("Move counts: ");
             for (int i=0; i < no_move_stat.size(); ++i) ROS_INFO_STREAM(i<<": "<<no_move_stat[i]);
+            */
             finished = true;
             setExecutionFinished(true);
         }

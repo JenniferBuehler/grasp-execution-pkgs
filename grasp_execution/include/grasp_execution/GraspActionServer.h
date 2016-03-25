@@ -10,7 +10,7 @@ namespace grasp_execution
 {
 
 /**
- * Action server that can be used for grasping and un-grasping.
+ * \brief Action server that can be used for grasping and un-grasping.
  * The action message accepted is grasp_execution_msgs/Grasp.action. Please also refer
  * to this message for documentation about the inputs / outputs.
  *

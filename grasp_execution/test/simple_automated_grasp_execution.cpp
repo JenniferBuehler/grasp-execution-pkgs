@@ -5,19 +5,23 @@
 #include <arm_components_name_manager/ArmComponentsNameManager.h>
 #include <convenience_ros_functions/ROSFunctions.h>
 #include <convenience_ros_functions/RobotInfo.h>
+#include <convenience_math_functions/MathFunctions.h>
 
 #include "SimpleGraspGenerator.h"
 #include <object_msgs/Object.h>
 #include <object_msgs/ObjectInfo.h>
 #include <object_msgs_tools/ObjectFunctions.h>
-#include <grasp_execution_reach_test/MoveItPlanner.h>
+#include <moveit_planning_helper/MoveItPlanner.h>
+#include <moveit_object_handling/GraspedObjectHandler.h>
 
 #include <control_msgs/FollowJointTrajectoryAction.h>
 
 
 using object_msgs_tools::ObjectFunctions;
-using grasp_execution_reach_test::MoveItPlanner;
+using moveit_planning_helper::MoveItPlanner;
 using convenience_ros_functions::RobotInfo;
+using convenience_math_functions::MathFunctions;
+using arm_components_name_manager::ArmComponentsNameManager;
 
 /**
  * \param timeout_wait_object wait this amount of seconds maximum until cube is there.
@@ -54,6 +58,165 @@ bool getObjectPose(const std::string& object_name, const std::string& REQUEST_OB
     return ObjectFunctions::getObjectPose(srv.response.object,pose);
 }
 
+
+sensor_msgs::JointState getHomeState(const ArmComponentsNameManager& joints, bool capToPI)
+{
+    std::vector<float> arm_init = joints.getArmJointsInitPose();
+    if (capToPI)
+    {
+        MathFunctions::capToPI(arm_init); 
+    }
+    sensor_msgs::JointState ret;
+    joints.copyToJointState(ret, 0, &arm_init, 0, true);
+    ret.velocity.resize(arm_init.size(),0);
+    return ret;
+}
+
+
+/**
+ * \param currState current state of arm. Must include gripper joints.
+ * \param targetState target state of arm. Must include gripper joints,
+ *      values will be overwritten with the ones in \e currState
+ */
+bool setFingersToCurr(const ArmComponentsNameManager& jointsManager, 
+    const sensor_msgs::JointState& currState, sensor_msgs::JointState& targetState)
+{
+    std::vector<std::string> gripperJoints = jointsManager.getGripperJoints();
+    std::vector<int> idxCurr;
+    if (!jointsManager.getJointIndices(currState.name, idxCurr,2))
+    {
+        ROS_ERROR("Current state does not have finger joint names.");
+        return false;
+    }
+        
+    if (idxCurr.size() != gripperJoints.size())
+    {
+        ROS_ERROR_STREAM("Consistency in current state: number of joint indices ("<<idxCurr.size()<<
+            ") smaller than expected ("<<gripperJoints.size()<<")");
+        return false;
+    }
+
+    std::vector<int> idxTarget;
+    if (!jointsManager.getJointIndices(targetState.name, idxTarget,2))
+    {
+        ROS_ERROR("Current state does not have finger joint names.");
+        return false;
+    }
+        
+    if (idxTarget.size() != gripperJoints.size())
+    {
+        ROS_ERROR_STREAM("Consistency in target state: number of joint indices ("<<idxTarget.size()<<
+            ") smaller than expected ("<<gripperJoints.size()<<")");
+        return false;
+    }
+
+
+    for (int i=0; i < gripperJoints.size(); ++i)
+    {
+        targetState.position[idxTarget[i]]=currState.position[idxCurr[i]];
+    }
+    return true;
+}
+
+
+/**
+ * \retval 0 success
+ * \retval -1 can't find transform from object to arm base
+ * \retval -2 planning failed
+ * \retval -3 execution failed
+ */
+int planAndExecuteMotion(
+    const ArmComponentsNameManager& jointsManager,
+    MoveItPlanner& trajectoryPlanner,
+    const std::string& object_frame_id,
+    const std::string& arm_base_link,
+    moveit_msgs::Constraints& reachConstraints,
+    const float arm_reach_span,
+    const std::string& planning_group,
+    const std::string& JOINT_STATES_TOPIC,
+    const std::string& JOINT_TRAJECTORY_ACTION_NAME)
+{
+    // get the current arm base pose in the object frame. This is needed
+    // to generate MoveIt! workspace. This can be in any frame, it can also
+    // be the object frame since the robot is not moving.
+    convenience_ros_functions::ROSFunctions::initSingleton();
+    geometry_msgs::PoseStamped currBasePose;
+    int transRet=convenience_ros_functions::ROSFunctions::Singleton()->getTransform(
+            object_frame_id, arm_base_link,
+            currBasePose.pose,
+            ros::Time(0),2,true);
+    if (transRet!=0) {
+        ROS_ERROR("Could not get current effector tf transform in object frame.");
+        return -1;
+    }
+    currBasePose.header.stamp=ros::Time::now();
+    currBasePose.header.frame_id=object_frame_id;
+    // ROS_INFO_STREAM("Effector currBasePose pose: "<<currBasePose);
+ 
+    // request joint trajectory
+    RobotInfo robotInfo;
+    ros::NodeHandle pub("");
+    sensor_msgs::JointState currArmJointState = robotInfo.getCurrentJointState(JOINT_STATES_TOPIC, pub);
+    // get only the arm joints of the joint state:
+    jointsManager.extractFromJointState(currArmJointState,0,currArmJointState);
+    // ROS_INFO_STREAM("Current arm joint state: "<<currArmJointState);
+
+    moveit_msgs::RobotTrajectory robotTrajectory;
+    moveit_msgs::MoveItErrorCodes moveitRet = trajectoryPlanner.requestTrajectory(
+        currBasePose,
+        arm_reach_span,
+        planning_group,
+        reachConstraints,
+        NULL,
+        currArmJointState,
+        robotTrajectory);
+
+    if (moveitRet.val != moveit_msgs::MoveItErrorCodes::SUCCESS)
+    {
+        ROS_ERROR("Could not plan joint trajectory");
+        return -2;
+    }
+
+
+    // ROS_INFO("############  Resulting joint trajectory ################");
+    // ROS_INFO_STREAM(robotTrajectory.joint_trajectory);
+
+    /////////// Execute joint trajectory  ///////////////////
+
+    //ROS_INFO("Now constructing joint trajectory goal");
+
+    // send a goal to the action
+    control_msgs::FollowJointTrajectoryGoal jtGoal;
+    jtGoal.trajectory = robotTrajectory.joint_trajectory;
+
+    // create the action client
+    actionlib::SimpleActionClient<control_msgs::FollowJointTrajectoryAction> jtac(JOINT_TRAJECTORY_ACTION_NAME, true);
+    ROS_INFO_STREAM("Waiting for joint trajectory action server to start: "<< JOINT_TRAJECTORY_ACTION_NAME);
+    // wait for the action server to start
+    jtac.waitForServer();  // will wait for infinite time
+    ROS_INFO("Joint trajectory action server has started. Now sending goal");
+    jtac.sendGoal(jtGoal);
+
+    // wait for the action to return
+    bool finished_before_timeout = jtac.waitForResult(ros::Duration(15.0));
+    actionlib::SimpleClientGoalState state = jtac.getState();
+    if (state!=actionlib::SimpleClientGoalState::SUCCEEDED)
+    {
+        if (finished_before_timeout)
+        {
+            ROS_ERROR("Could not execute joint trajectory action: %s",state.toString().c_str());
+        }
+        else
+        {
+            ROS_ERROR("Joint trajectory action did not finish before the time out.");
+        }
+        return -3;
+    }
+    ROS_INFO("Joint trajectory action finished: %s",state.toString().c_str());
+    return 0;
+}
+
+
 int main(int argc, char** argv)
 {
     ros::init(argc, argv, "grasp_action_client");
@@ -70,7 +233,6 @@ int main(int argc, char** argv)
     std::string OBJECT_NAME;
 	priv.param<std::string>("object_name", OBJECT_NAME, OBJECT_NAME);
 
-
     std::string ROBOT_NAMESPACE;
     if (!priv.hasParam("robot_namespace"))
     {
@@ -79,15 +241,18 @@ int main(int argc, char** argv)
     }
 	priv.param<std::string>("robot_namespace", ROBOT_NAMESPACE, ROBOT_NAMESPACE);
 
-    arm_components_name_manager::ArmComponentsNameManager jointsManager(ROBOT_NAMESPACE, false);
+    ArmComponentsNameManager jointsManager(ROBOT_NAMESPACE, false);
     double maxWait=5;
     ROS_INFO("Waiting for joint info parameters to be loaded...");
     jointsManager.waitToLoadParameters(1,maxWait); 
     ROS_INFO("Parameters loaded.");
 
     std::vector<std::string> gripperJoints = jointsManager.getGripperJoints();
-    for (int i=0; i<gripperJoints.size(); ++i) ROS_INFO_STREAM("Gripper "<<i<<": "<<gripperJoints[i]);
-    // std::vector<std::string> armJoints = joints.getArmJoints();
+    // for (int i=0; i<gripperJoints.size(); ++i) ROS_INFO_STREAM("Gripper "<<i<<": "<<gripperJoints[i]);
+
+    std::vector<std::string> gripperLinkNames=jointsManager.getGripperLinks();
+    std::string palmLinkName = jointsManager.getPalmLink();
+    gripperLinkNames.push_back(palmLinkName);
 
     std::string arm_base_link = jointsManager.getArmLinks().front();
     std::string effector_link = jointsManager.getEffectorLink();
@@ -99,8 +264,7 @@ int main(int argc, char** argv)
 	priv.param<double>("open_angles", OPEN_ANGLES, OPEN_ANGLES);
     double CLOSE_ANGLES=0.7;
 	priv.param<double>("close_angles", CLOSE_ANGLES, CLOSE_ANGLES);
-
-
+    
     double POSE_ABOVE;
 	priv.param<double>("pose_above_object", POSE_ABOVE, POSE_ABOVE);
     double POSE_X;
@@ -114,7 +278,6 @@ int main(int argc, char** argv)
 	priv.param<double>("effector_ori_tolerance", EFF_ORI_TOL, EFF_ORI_TOL);
     double JOINT_ANGLE_TOL;
 	priv.param<double>("joint_angle_tolerance", JOINT_ANGLE_TOL, JOINT_ANGLE_TOL);
-   
 
 	std::string REQUEST_OBJECTS_SERVICE="world/request_object";
 	priv.param<std::string>("request_object_service", REQUEST_OBJECTS_SERVICE, REQUEST_OBJECTS_SERVICE);
@@ -134,10 +297,18 @@ int main(int argc, char** argv)
 	std::string MOVEIT_STATE_VALIDITY_SERVICE="/check_state_validity";
 	priv.param<std::string>("moveit_state_validity_service", MOVEIT_STATE_VALIDITY_SERVICE, MOVEIT_STATE_VALIDITY_SERVICE);
 
+    std::string MOVEIT_GET_PLANNING_SCENE_SERVICE("/get_planning_scene");
+	priv.param<std::string>("moveit_get_planning_scene_service", MOVEIT_GET_PLANNING_SCENE_SERVICE, MOVEIT_GET_PLANNING_SCENE_SERVICE);
+    
+    std::string MOVEIT_SET_PLANNING_SCENE_TOPIC("/planning_scene");
+	priv.param<std::string>("moveit_get_planning_scene_topic", MOVEIT_SET_PLANNING_SCENE_TOPIC, MOVEIT_SET_PLANNING_SCENE_TOPIC);
+
     double ARM_REACH_SPAN = 2;
 	priv.param<double>("arm_reach_span", ARM_REACH_SPAN, ARM_REACH_SPAN);
     std::string PLANNING_GROUP="Arm";
 	priv.param<std::string>("planning_group", PLANNING_GROUP, PLANNING_GROUP);
+
+
  
     /////////// Get object pose  ///////////////////
         
@@ -181,11 +352,10 @@ int main(int argc, char** argv)
     grasp_execution::SimpleGraspGenerator::useCustomTolerances(EFF_POS_TOL,
         EFF_ORI_TOL, JOINT_ANGLE_TOL, graspGoal);
     
-    ROS_INFO("################################");
-    ROS_INFO_STREAM("Generated grasp_execution_msgs::Grasp: "<<std::endl<<graspGoal);
+    // ROS_INFO("################################");
+    // ROS_INFO_STREAM("Generated grasp_execution_msgs::Grasp: "<<std::endl<<graspGoal);
 
-
-    /////////// Do trajectory planning to reach  ///////////////////
+    /////////// Do trajectory planning to reach, and execution  ///////////////////
     
     MoveItPlanner trajectoryPlanner(pub, 
 	        MOVEIT_MOTION_PLAN_SERVICE,
@@ -196,105 +366,92 @@ int main(int argc, char** argv)
     float plan_eff_pos_tol = EFF_POS_TOL / 2.0;
     float plan_eff_ori_tol = EFF_ORI_TOL / 2.0;
     int type = 1; // 0 = only position, 1 = pos and ori, 2 = only ori
-    moveit_msgs::Constraints goal_constraints = trajectoryPlanner.getPoseConstraint(effector_link,
+    moveit_msgs::Constraints reachConstraints = trajectoryPlanner.getPoseConstraint(effector_link,
         mgrasp.grasp_pose, plan_eff_pos_tol, plan_eff_ori_tol, type); 
-    
 
-    // get the current arm base pose in the object frame. This is needed
-    // to generate MoveIt! workspace. This can be in any frame, it can also
-    // be the object frame since the robot is not moving.
-    convenience_ros_functions::ROSFunctions::initSingleton();
-    geometry_msgs::PoseStamped currBasePose;
-    int transRet=convenience_ros_functions::ROSFunctions::Singleton()->getTransform(
-            object_frame_id, arm_base_link,
-            currBasePose.pose,
-            ros::Time(0),2,true);
-    if (transRet!=0) {
-        ROS_ERROR("Could not get current effector tf transform in object frame.");
-        return 0;
-    }
-    currBasePose.header.stamp=ros::Time::now();
-    currBasePose.header.frame_id=object_frame_id;
-    // ROS_INFO_STREAM("Effector currBasePose pose: "<<currBasePose);
- 
-    // request joint trajectory
-    RobotInfo robotInfo;
-    sensor_msgs::JointState currArmJointState = robotInfo.getCurrentJointState(JOINT_STATES_TOPIC, pub);
-    jointsManager.extractFromJointState(currArmJointState,0,currArmJointState);
-    // ROS_INFO_STREAM("Current arm joint state: "<<currArmJointState);
 
-    moveit_msgs::RobotTrajectory robotTrajectory;
-    moveit_msgs::MoveItErrorCodes moveitRet = trajectoryPlanner.requestTrajectory(
-        currBasePose,
+    int motionRet = planAndExecuteMotion(
+        jointsManager,
+        trajectoryPlanner,
+        object_frame_id,
+        arm_base_link,
+        reachConstraints,
         ARM_REACH_SPAN,
         PLANNING_GROUP,
-        goal_constraints,
-        NULL,
-        currArmJointState,
-        robotTrajectory);
-
-    if (moveitRet.val != moveit_msgs::MoveItErrorCodes::SUCCESS)
+        JOINT_STATES_TOPIC,
+        JOINT_TRAJECTORY_ACTION_NAME);
+    if (motionRet !=0)
     {
-        ROS_ERROR("Could not plan joint trajectory");
+        ROS_ERROR_STREAM("Could not plan/execution motion, return code "<<motionRet);
         return 0;
     }
 
 
-    ROS_INFO("############  Resulting joint trajectory ################");
-    ROS_INFO_STREAM(robotTrajectory.joint_trajectory);
-
-    /////////// Execute joint trajectory  ///////////////////
-
-    ROS_INFO("Now constructing joint trajectory goal");
-
-    // send a goal to the action
-    control_msgs::FollowJointTrajectoryGoal jtGoal;
-    jtGoal.trajectory = robotTrajectory.joint_trajectory;
-
-    // create the action client
-    actionlib::SimpleActionClient<control_msgs::FollowJointTrajectoryAction> jtac(JOINT_TRAJECTORY_ACTION_NAME, true);
-    ROS_INFO_STREAM("Waiting for action server to start: "<< JOINT_TRAJECTORY_ACTION_NAME);
-    // wait for the action server to start
-    jtac.waitForServer();  // will wait for infinite time
-    ROS_INFO("Joint trajectory action server has started. Now sending goal");
-    jtac.sendGoal(jtGoal);
-
-    //wait for the action to return
-    bool finished_before_timeout = jtac.waitForResult(ros::Duration(15.0));
-    if (finished_before_timeout)
-    {
-        actionlib::SimpleClientGoalState state = jtac.getState();
-        ROS_INFO("Action finished: %s",state.toString().c_str());
-    }
-    else
-    {
-        ROS_INFO("Action did not finish before the time out.");
-        return 0;
-    }
-    
     /////////// Send grasp execution action request  ///////////////////
 
     // create the action client
     // true causes the client to spin its own thread
     actionlib::SimpleActionClient<grasp_execution_msgs::GraspAction> gac(GRASP_ACTION_NAME, true);
 
-    ROS_INFO_STREAM("Waiting for action server to start: "<< GRASP_ACTION_NAME);
+    ROS_INFO_STREAM("Waiting for grasp action server to start: "<< GRASP_ACTION_NAME);
     // wait for the action server to start
     gac.waitForServer(); //will wait for infinite time
-    ROS_INFO("Action server started. Now sending goal");
+    ROS_INFO("Grasp action server started. Now sending goal");
     gac.sendGoal(graspGoal);
 
     //wait for the action to return
-    finished_before_timeout = gac.waitForResult(ros::Duration(15.0));
-    if (finished_before_timeout)
+    bool finished_before_timeout = gac.waitForResult(ros::Duration(15.0));
+    actionlib::SimpleClientGoalState state = gac.getState();
+    if (state!=actionlib::SimpleClientGoalState::SUCCEEDED)
     {
-        actionlib::SimpleClientGoalState state = gac.getState();
-        ROS_INFO("Action finished: %s",state.toString().c_str());
-    }
-    else
-    {
-        ROS_INFO("Action did not finish before the time out.");
+        if (finished_before_timeout)
+        {
+            ROS_ERROR("Could not execute grasp action: %s",state.toString().c_str());
+        }
+        else
+        {
+            ROS_ERROR("Grasp action did not finish before the time out.");
+        }
         return 0;
     }
+    ROS_INFO("Grasp action finished: %s",state.toString().c_str());
+
+
+    //////////////////// attach object to MoveIt! robot ////////////////////////
+
+    moveit_object_handling::GraspedObjectHandlerMoveIt graspHandler(pub,gripperLinkNames,MOVEIT_GET_PLANNING_SCENE_SERVICE,MOVEIT_SET_PLANNING_SCENE_TOPIC);
+    graspHandler.waitForSubscribers();
+    graspHandler.attachObjectToRobot(OBJECT_NAME,palmLinkName);
+
+    //////////////////// Move the arm to home ///////////////////////////
+    sensor_msgs::JointState homeState=getHomeState(jointsManager,true);
+    ROS_INFO_STREAM("HOME STATE: "<<homeState);
+    RobotInfo robotInfo;
+    sensor_msgs::JointState currJointState = robotInfo.getCurrentJointState(JOINT_STATES_TOPIC, pub);
+    if (!setFingersToCurr(jointsManager, currJointState, homeState))
+    {
+        ROS_ERROR("Could not set the target finger states");
+        return 0;
+    }
+
+    float JOINT_PLAN_TOL=0.02;
+    moveit_msgs::Constraints homeConstraints = trajectoryPlanner.getJointConstraint(homeState,JOINT_PLAN_TOL); 
+
+    int homeMotionRet = planAndExecuteMotion(
+        jointsManager,
+        trajectoryPlanner,
+        object_frame_id,
+        arm_base_link,
+        homeConstraints,
+        ARM_REACH_SPAN,
+        PLANNING_GROUP,
+        JOINT_STATES_TOPIC,
+        JOINT_TRAJECTORY_ACTION_NAME);
+    if (homeMotionRet !=0)
+    {
+        ROS_ERROR_STREAM("Could not plan/execution motion to HOME, return code "<<motionRet);
+        return 0;
+    }
+
     return 0;
 }

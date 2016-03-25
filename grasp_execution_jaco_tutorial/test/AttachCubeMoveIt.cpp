@@ -23,7 +23,7 @@
 #include <ros/ros.h>
 
 #include <jaco_joints/JacoJointManager.h>
-#include <object_moveit/GraspedObjectHandler.h>
+#include <moveit_object_handling/GraspedObjectHandler.h>
 #include <string>
 #include <vector>
 
@@ -58,7 +58,7 @@ int main(int argc, char **argv)
     std::string get_planning_scene("/get_planning_scene");
     std::string set_planning_scene("/planning_scene");
 
-    object_moveit::GraspedObjectHandlerMoveIt graspHandler(n,gripperLinkNames,get_planning_scene,set_planning_scene);
+    moveit_object_handling::GraspedObjectHandlerMoveIt graspHandler(n,gripperLinkNames,get_planning_scene,set_planning_scene);
     graspHandler.waitForSubscribers();
 
     if (!doDetach)

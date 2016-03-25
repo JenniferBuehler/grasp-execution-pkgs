@@ -1,4 +1,6 @@
-<!-- Launches$(find grasp_execution)/launch/simple_automated_grasp_execution.launch -->
+<!--
+    Launches $(find grasp_execution)/launch/simple_automated_grasp_execution.launch
+-->
 <launch>
     # Configuration file for the generation of the simple grasp and other
     # parameters for execution.

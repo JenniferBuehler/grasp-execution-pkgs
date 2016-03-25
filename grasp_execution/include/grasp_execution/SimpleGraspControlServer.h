@@ -19,8 +19,10 @@ namespace grasp_execution
 {
 
 /**
- * Accepts grasp_execution_msgs/GraspControl action and publishes the goal joint state to a
- * sensor_msgs::JointState joint control topic, in order to close/open the hand.
+ * \brief Accepts grasp_execution_msgs/GraspControl action to open or close the grippers/fingers.
+ * 
+ * This simple implementation publishes the goal joint state as a sensor_msgs::JointState to a
+ * topic used to control joints, in order to close/open the hand.
  * The grasp is considered finished when the grippers are at the goal position, or if they
  * haven't moved for a certain time.
  *

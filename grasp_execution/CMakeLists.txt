@@ -19,7 +19,8 @@ find_package(catkin REQUIRED COMPONENTS
   object_msgs
   object_msgs_tools
   eigen_conversions
-  grasp_execution_reach_test
+  moveit_planning_helper
+  moveit_object_handling
 )
 
 ################################################
@@ -59,7 +60,8 @@ catkin_package(
         convenience_math_functions convenience_ros_functions
         object_msgs object_msgs_tools eigen_conversions
         actionlib actionlib_msgs
-        grasp_execution_reach_test
+        moveit_planning_helper
+        moveit_object_handling
 #  DEPENDS system_lib
 )
 

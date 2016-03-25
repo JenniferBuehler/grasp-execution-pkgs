@@ -2,31 +2,24 @@
 <package>
   <name>grasp_execution</name>
   <version>0.0.0</version>
-  <description>The grasp_execution package</description>
+  <description>
+    Collection of ROS services and actions to execute a grasp.
+  </description>
 
-  <!-- One maintainer tag required, multiple allowed, one person per tag --> 
-  <!-- Example:  -->
-  <!-- <maintainer email="jane.doe@example.com">Jane Doe</maintainer> -->
-  <maintainer email="jenny@todo.todo">jenny</maintainer>
+  <maintainer email="jennifer.e.buehler@gmail.com">Jennifer Buehler</maintainer>
+  <author email="jennifer.e.buehler@gmail.com">Jennifer Buehler</author>
 
 
   <!-- One license tag required, multiple allowed, one license per tag -->
   <!-- Commonly used license strings: -->
   <!--   BSD, MIT, Boost Software License, GPLv2, GPLv3, LGPLv2.1, LGPLv3 -->
-  <license>TODO</license>
+  <license>GPLv3</license>
 
 
   <!-- Url tags are optional, but mutiple are allowed, one per tag -->
   <!-- Optional attribute type can be: website, bugtracker, or repository -->
   <!-- Example: -->
   <!-- <url type="website">http://wiki.ros.org/grasp_execution</url> -->
-
-
-  <!-- Author tags are optional, mutiple are allowed, one per tag -->
-  <!-- Authors do not have to be maintianers, but could be -->
-  <!-- Example: -->
-  <!-- <author email="jane.doe@example.com">Jane Doe</author> -->
-
 
   <!-- The *_depend tags are used to specify dependencies -->
   <!-- Dependencies can be catkin packages or system dependencies -->
@@ -55,7 +48,8 @@
   <build_depend>convenience_math_functions</build_depend>
   <build_depend>convenience_ros_functions</build_depend>
   <build_depend>eigen_conversions</build_depend>
-  <build_depend>grasp_execution_reach_test</build_depend>
+  <build_depend>moveit_planning_helper</build_depend>
+  <build_depend>moveit_object_handling</build_depend>
 
   <run_depend>control_msgs</run_depend>
   <run_depend>grasp_execution_msgs</run_depend>
@@ -72,7 +66,8 @@
   <run_depend>convenience_math_functions</run_depend>
   <run_depend>convenience_ros_functions</run_depend>
   <run_depend>eigen_conversions</run_depend>
-  <run_depend>grasp_execution_reach_test</run_depend>
+  <run_depend>moveit_planning_helper</run_depend>
+  <run_depend>moveit_object_handling</run_depend>
 
 
   <!-- The export tag contains other, unspecified, tags -->

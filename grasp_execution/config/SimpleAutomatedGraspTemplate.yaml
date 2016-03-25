@@ -53,3 +53,9 @@ moveit_motion_plan_service: /plan_kinematic_path
 
 # state validity checking service of moveit
 moveit_state_validity_service: /check_state_validity
+
+# MoveIt! service to get planning scene
+moveit_get_planning_scene_service: /get_planning_scene
+
+# MoveIt! topic to set planning scene
+moveit_set_planning_scene_topic: /planning_scene

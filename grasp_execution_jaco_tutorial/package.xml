@@ -43,12 +43,14 @@
   <build_depend>gazebo_grasp_plugin</build_depend>
   <build_depend>jaco_on_table</build_depend>
   <build_depend>jaco_joints</build_depend>
-  <build_depend>object_moveit</build_depend>
+  <build_depend>moveit_object_handling</build_depend>
+  <build_depend>grasp_execution</build_depend>
   <build_depend>roscpp</build_depend>
   <run_depend>gazebo_grasp_plugin</run_depend>
   <run_depend>jaco_on_table</run_depend>
   <run_depend>jaco_joints</run_depend>
-  <run_depend>object_moveit</run_depend>
+  <run_depend>moveit_object_handling</run_depend>
+  <run_depend>grasp_execution</run_depend>
   <run_depend>roscpp</run_depend>
   
   <run_depend>gazebo_test_tools</run_depend>

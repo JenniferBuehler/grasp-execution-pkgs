@@ -8,7 +8,7 @@ object_name: cube1
 robot_namespace: jaco
 
 # end effector to be positioned this much above object (z-direction)
-pose_above_object: 0.16
+pose_above_object: 0.17
 
 # end effector to be positioned relative to object (x-direction)
 x_from_object: 0.0
@@ -53,3 +53,9 @@ moveit_motion_plan_service: /plan_kinematic_path
 
 # state validity checking service of moveit
 moveit_state_validity_service: /check_state_validity
+
+# MoveIt! service to get planning scene
+moveit_get_planning_scene_service: /get_planning_scene
+
+# MoveIt! topic to set planning scene
+moveit_set_planning_scene_topic: /planning_scene

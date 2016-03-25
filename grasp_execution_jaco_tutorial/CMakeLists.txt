@@ -8,7 +8,8 @@ find_package(catkin REQUIRED COMPONENTS
   gazebo_grasp_plugin
   jaco_on_table
   jaco_joints
-  object_moveit
+  moveit_object_handling
+  grasp_execution
   roscpp
 )
 
@@ -24,7 +25,7 @@ find_package(catkin REQUIRED COMPONENTS
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES grasp_execution_jaco_tutorial
-#  CATKIN_DEPENDS gazebo_grasp_plugin jaco_on_table roscpp
+ CATKIN_DEPENDS gazebo_grasp_plugin jaco_on_table jaco_joints moveit_object_handling grasp_execution roscpp 
 #  DEPENDS system_lib
 )
 

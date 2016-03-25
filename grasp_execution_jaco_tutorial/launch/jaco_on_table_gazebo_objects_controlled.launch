@@ -11,9 +11,9 @@
 	#####################################
 	# Load MoveIt! collision object generator
     #####################################
-    <include file="$(find object_moveit)/launch/collision_object_generator.launch">
+    <include file="$(find moveit_object_handling)/launch/collision_object_generator.launch">
         # use the default config file
-        <arg name="config_file" value="$(find object_moveit)/config/CollisionObjectsGenerator.yaml"/>
+        <arg name="config_file" value="$(find moveit_object_handling)/config/CollisionObjectsGenerator.yaml"/>
     </include>
 
     #################################
