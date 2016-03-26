@@ -1,0 +1,30 @@
+# namespace of the robot, used for the joint names
+# ROS parameters for ArmComponentsNameManager.
+# For the simple grasp execution to work, the parameters must
+# have been launched with a launch file like in
+# $(find arm_components_name_manager)/launch/init_params.launch.
+robot_namespace: no-name
+
+grasp_control_action_topic: /grasp_execution/grasp_control
+joint_control_topic: /joint_control
+joint_states_topic: /joint_states
+
+# rate at which the gripper states are checked on the criteria
+# of either being in goal state or not moving any more
+check_movement_rate: 20
+
+# As soon as a gripper joint moves less than this amount of rads 
+# since the last update of its position, it
+# is considered to not have moved. This is checked at a rate of
+# check_movement_rate 
+no_move_tolerance: 0.05
+
+# Number of times at which a joint has not moved (at interval check_movement_rate 
+# and not moved more than no_move_tolerance) at which point it is considered "still".
+no_move_still_cnt: 20
+
+# tolerance (in radian) at which a goal pose of the grippers
+# is considered reached
+goal_tolerance: 0.02
+
+

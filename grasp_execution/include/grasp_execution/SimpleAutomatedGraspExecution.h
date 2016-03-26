@@ -17,7 +17,8 @@ namespace grasp_execution
 
 /**
  * Simple class to test automated grasping. Reads parameters from ROS parameter
- * server, according to the template ``rosed grasp_execution SimpleAutomatedGraspTemplate.yaml``.
+ * server (within the private node namespace), according to the template
+ * ``rosed grasp_execution SimpleAutomatedGraspTemplate.yaml``.
  * This class also provides some convenience functions and can be derived to
  * help a quick-start to test automated grasping.
  *
@@ -31,9 +32,41 @@ public:
     virtual ~SimpleAutomatedGraspExecution();
 
     bool init();
+    /**
+     * Plans a grasp for this object
+     * \param doGrasp if true, plan a grasp. If false, plan for an un-grasp
+     */
+    bool graspPlan(const std::string& object_name, bool doGrasp, grasp_execution_msgs::GraspGoal& graspGoal);
+    /**
+     * Does motion planning and execution to reach to the object before grasping it
+     */
+    bool reach(const std::string& object_name, const grasp_execution_msgs::GraspGoal& graspGoal);
+    /**
+     * Grasps the object
+     */
+    bool grasp(const std::string& object_name, const grasp_execution_msgs::GraspGoal& graspGoal);
+    /**
+     * Un-grasps the object
+     */
+    bool unGrasp(const std::string& object_name, const grasp_execution_msgs::GraspGoal& graspGoal);
+    /**
+     * Homes the arm
+     */
+    bool homeArm();
+
+    /**
+     * Test method which grasps the object, homes the arm, and then ungrasps
+     * the object.
+     */
+    bool graspHomeAndUngrasp(const std::string& object_name);
 
 protected:
     virtual bool initImpl()=0;
+    /**
+     * Get the grasp for this object
+     * \param isGrasp generate it as a grasp if true, or as ungrasp if false.
+     */
+    virtual bool getGrasp(const std::string& object_name, bool isGrasp, grasp_execution_msgs::GraspGoal& graspGoal)=0;
 
     /**
      * \param timeout_wait_object wait this amount of seconds maximum until cube is there.
@@ -51,34 +84,41 @@ protected:
     bool setFingersToCurr(const sensor_msgs::JointState& currState, sensor_msgs::JointState& targetState); 
 
     /**
+     * \param arm_base_link the link name of the base of the arm
+     * \param fixed_frame_id A fixed frame to be used to determine the pose fo the \e arm_base_link from /tf
+     *      transforms. This is used to generate MoveIt! workspace. This can be in any frame, it can also
+     *      be the object frame since the robot is not moving.
      * \retval 0 success
      * \retval -1 can't find transform from object to arm base
      * \retval -2 planning failed
      * \retval -3 execution failed
      */
     int planAndExecuteMotion(
-        const std::string& object_frame_id,
+        const std::string& fixed_frame_id,
         const std::string& arm_base_link,
         moveit_msgs::Constraints& reachConstraints,
         const float arm_reach_span,
         const std::string& planning_group); 
 
+    bool initialized;
     arm_components_name_manager::ArmComponentsNameManager * jointsManager;
     moveit_planning_helper::MoveItPlanner * trajectoryPlanner;
+    moveit_object_handling::GraspedObjectHandlerMoveIt * graspHandler;
+    convenience_ros_functions::RobotInfo robotInfo;
     ros::NodeHandle node;
         
     actionlib::SimpleActionClient<grasp_execution_msgs::GraspAction> * graspActionClient;
     actionlib::SimpleActionClient<control_msgs::FollowJointTrajectoryAction> * jointTrajectoryActionClient;
  
-    ///// all fields read from ROS parameters
+
+    ///// all variables read from ROS parameters
     
-    std::string OBJECT_NAME;
-    bool GRASPING;
     double OPEN_ANGLES;
     double CLOSE_ANGLES;
     double EFF_POS_TOL;
     double EFF_ORI_TOL;
     double JOINT_ANGLE_TOL;
+    double PLAN_TOLERANCE_FACTOR;
 	std::string REQUEST_OBJECTS_SERVICE;
     std::string JOINT_STATES_TOPIC;
     std::string GRASP_ACTION_NAME;
@@ -89,40 +129,6 @@ protected:
     std::string MOVEIT_SET_PLANNING_SCENE_TOPIC;
     double ARM_REACH_SPAN;
     std::string PLANNING_GROUP;
-};
-
-
-/**
- * Generates a simple grasp from top of the object and then executes it.
- * In addition to the ROS parameters of base class, also takes following
- * ROS Parameters:
- *
- * ``
- *   # end effector to be positioned this much above object (z-direction)
- *   pose_above_object: 0.17
- *   # end effector to be positioned relative to object (x-direction)
- *   x_from_object: 0.0
- *
- *   # end effector to be positioned relative to object (y-direction)
- *   y_from_object: -0.02
- * ``
- */
-class SimpleAutomatedGraspFromTop: public SimpleAutomatedGraspExecution
-{
-public:
-    SimpleAutomatedGraspFromTop();
-    virtual ~SimpleAutomatedGraspFromTop();
-    bool exeTest();
-
-protected:
-    virtual bool initImpl(); 
-
-private:
-    bool generateGrasp(grasp_execution_msgs::GraspGoal& graspGoal);    
-    
-    double POSE_ABOVE;
-    double POSE_X;
-    double POSE_Y;
 };
 
 }  // namespace

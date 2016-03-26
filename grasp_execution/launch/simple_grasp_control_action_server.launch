@@ -1,41 +1,10 @@
 <launch>
-    # namespace of the robot, used for the joint names
-    # ROS parameters for ArmComponentsNameManager.
-    # For the simple grasp execution to work, the parameters must
-    # have been launched with a launch file like in
-    # $(find arm_components_name_manager)/launch/init_params.launch.
-    <arg name="robot_namespace"/>
+    # Configuration file for the grasp control action server.
+    <arg name="config_file" default="$(find grasp_execution)/config/GraspControlActionServer.yaml"/>
 
-    <arg name="grasp_control_action_topic" default="/grasp_execution/grasp_control"/>
-    <arg name="joint_control_topic" default="/joint_control"/>
-    <arg name="joint_states_topic" default="/joint_states"/>
-    
-	# rate at which the gripper states are checked on the criteria
-    # of either being in goal state or not moving any more
-    <arg name="check_movement_rate" default="20"/>
-	
-    # As soon as a gripper joint moves less than this amount of rads 
-    # since the last update of its position, it
-	# is considered to not have moved. This is checked at a rate of
-    # check_movement_rate 
-    <arg name="no_move_tolerance" default="0.05"/>
-    
-    # Number of times at which a joint has not moved (at interval check_movement_rate 
-    # and not moved more than no_move_tolerance) at which point it is considered "still".
-    <arg name="no_move_still_cnt" default="3"/>
-    
-	# tolerance (in radian) at which a goal pose of the grippers
-    # is considered reached
-    <arg name="goal_tolerance" default="0.02"/>
+    # Load the ROS parameters from config file: 
+    <arg name="node_name" default="simple_grasp_control_server"/>
+    <rosparam ns="$(arg node_name)" file="$(arg config_file)"/>
 
-	<node name="simple_grasp_control_server" pkg="grasp_execution" type="simple_grasp_control_server_node" output="screen">
-        <param name="joint_states_topic" value="$(arg joint_states_topic)"/>
-        <param name="joint_control_topic" value="$(arg joint_control_topic)"/>
-        <param name="grasp_control_action_topic" value="$(arg grasp_control_action_topic)"/>
-        <param name="robot_namespace" value="$(arg robot_namespace)"/>
-        <param name="check_movement_rate" value="$(arg check_movement_rate)"/>
-        <param name="no_move_tolerance" value="$(arg no_move_tolerance)"/>
-        <param name="no_move_still_cnt" value="$(arg no_move_still_cnt)"/>
-        <param name="goal_tolerance" value="$(arg goal_tolerance)"/>
-    </node>
+	<node name="simple_grasp_control_server" pkg="grasp_execution" type="simple_grasp_control_server_node" output="screen"/>
 </launch>

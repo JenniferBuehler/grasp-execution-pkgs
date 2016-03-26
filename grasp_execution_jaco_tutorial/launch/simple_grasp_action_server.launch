@@ -1,17 +1,5 @@
 <launch>
-    <arg name="grasp_action_topic" default="/jaco/grasp_execution/grasp"/>
-    <arg name="grasp_control_action_topic" default="/jaco/grasp_execution/grasp_control"/>
-    <arg name="joint_states_topic" default="/jaco/joint_state"/>
-	<arg name="effector_pos_tolerance" default="0.02"/>
-    <arg name="effector_ori_tolerance" default="0.05"/>
-    <arg name="joint_angles_tolerance" default="0.05"/>
-    
 	<include file="$(find grasp_execution)/launch/simple_grasp_action_server.launch">
-        <arg name="joint_states_topic" value="$(arg joint_states_topic)"/>
-        <arg name="grasp_control_action_topic" value="$(arg grasp_control_action_topic)"/>
-        <arg name="grasp_action_topic" value="$(arg grasp_action_topic)"/>
-        <arg name="effector_pos_tolerance" value="$(arg effector_pos_tolerance)"/>
-        <arg name="effector_ori_tolerance" value="$(arg effector_ori_tolerance)"/>
-        <arg name="joint_angles_tolerance" value="$(arg joint_angles_tolerance)"/>
+        <arg name="config_file" value="$(find grasp_execution_jaco_tutorial)/config/GraspActionServer.yaml"/>
     </include>
 </launch>

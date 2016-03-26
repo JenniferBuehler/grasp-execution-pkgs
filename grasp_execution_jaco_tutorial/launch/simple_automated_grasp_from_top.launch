@@ -13,7 +13,7 @@
     <arg name="cube_y" default="0"/>
     <arg name="cube_z" default="0.76"/>
 
-    <include file="$(find grasp_execution)/launch/simple_automated_grasp_execution.launch">
+    <include file="$(find grasp_execution)/launch/simple_automated_grasp_from_top.launch">
         <arg name="config_file" value="$(arg config_file)"/>
         <arg name="cube_name" value="$(arg cube_name)"/>
         <arg name="gazebo_spawn_frame" value="$(arg gazebo_spawn_frame)"/>

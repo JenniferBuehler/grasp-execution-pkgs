@@ -5,7 +5,7 @@
 #include <arm_components_name_manager/ArmComponentsNameManager.h>
 #include <convenience_ros_functions/ROSFunctions.h>
 
-#include "SimpleGraspGenerator.h"
+#include <grasp_execution/SimpleGraspGenerator.h>
 #include <object_msgs/Object.h>
 #include <object_msgs/ObjectInfo.h>
 

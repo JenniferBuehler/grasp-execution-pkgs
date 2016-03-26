@@ -1,6 +1,3 @@
-# name of the object to grasp
-object_name: the-object-name 
-
 # namespace of the robot which is used to load the ArmComponentsNameManager.
 # For this node to work, the parameters must
 # have been launched with a launch file like in
@@ -13,9 +10,22 @@ open_angles: 0.05
 # angles to set all the finger joints to when un-grasping
 close_angles: 0.6
 
-effector_pos_tolerance: 0.04
+# Tolerance of expected end effector pose for a grasp.
+# Grasp considered ineligible if not within this tolerance.
+effector_pos_tolerance: 0.02
+
+# Tolerance of expected end effector orientation for a grasp.
+# Grasp considered ineligible if not within this tolerance.
 effector_ori_tolerance: 0.1
+
+# Tolerance of expected joint angles to be considered at a
+# certain state. Used for example to home the arm.
 joint_angle_tolerance: 0.05
+
+# the fraction of effector_(pos/ori)_tolerance and
+# joint_angle_tolerance which is to be used for
+# planning accuracy
+plan_tolerance_factor: 0.1
 
 # the span of the arm (from the arm base) when it's
 # stretched out at its max

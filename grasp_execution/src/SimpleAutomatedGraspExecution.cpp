@@ -2,13 +2,11 @@
 #include <convenience_ros_functions/ROSFunctions.h>
 #include <convenience_math_functions/MathFunctions.h>
 
-#include "SimpleGraspGenerator.h"
 #include <object_msgs/Object.h>
 #include <object_msgs/ObjectInfo.h>
 #include <object_msgs_tools/ObjectFunctions.h>
 
 using grasp_execution::SimpleAutomatedGraspExecution;
-using grasp_execution::SimpleAutomatedGraspFromTop;
 
 using object_msgs_tools::ObjectFunctions;
 using moveit_planning_helper::MoveItPlanner;
@@ -18,27 +16,29 @@ using arm_components_name_manager::ArmComponentsNameManager;
 
 
 SimpleAutomatedGraspExecution::SimpleAutomatedGraspExecution():
+    initialized(false),
     jointsManager(NULL),
     trajectoryPlanner(NULL),
     graspActionClient(NULL),
-    jointTrajectoryActionClient(NULL)
+    jointTrajectoryActionClient(NULL),
+    graspHandler(NULL)
 {
     convenience_ros_functions::ROSFunctions::initSingleton();
 }
-SimpleAutomatedGraspExecution::~SimpleAutomatedGraspExecution(){}
+SimpleAutomatedGraspExecution::~SimpleAutomatedGraspExecution()
+{
+    if (jointsManager) delete jointsManager;
+    if (trajectoryPlanner) delete trajectoryPlanner;
+    if (graspActionClient) delete graspActionClient;
+    if (jointTrajectoryActionClient) delete jointTrajectoryActionClient;
+    if (graspHandler) delete graspHandler;    
+}
 
 bool SimpleAutomatedGraspExecution::init()
 {
     ros::NodeHandle priv("~");
 
     /////////// Read parameters  ///////////////////
-    if (!priv.hasParam("object_name"))
-    {
-        ROS_ERROR("Object name required!");
-        return false;
-    } 
-    priv.param<std::string>("object_name", OBJECT_NAME, OBJECT_NAME);
-
     std::string ROBOT_NAMESPACE;
     if (!priv.hasParam("robot_namespace"))
     {
@@ -53,19 +53,19 @@ bool SimpleAutomatedGraspExecution::init()
     jointsManager->waitToLoadParameters(1,maxWait); 
     ROS_INFO("Parameters loaded.");
 
-    priv.param<bool>("grasping_action", GRASPING, true);
-    
     OPEN_ANGLES=0.05;
     priv.param<double>("open_angles", OPEN_ANGLES, OPEN_ANGLES);
     CLOSE_ANGLES=0.7;
     priv.param<double>("close_angles", CLOSE_ANGLES, CLOSE_ANGLES);
   
-    EFF_POS_TOL=0.04;
+    EFF_POS_TOL=0.02;
     EFF_ORI_TOL=0.1;
-    JOINT_ANGLE_TOL=0.05; 
+    JOINT_ANGLE_TOL=0.05;
+    PLAN_TOLERANCE_FACTOR=0.1;
     priv.param<double>("effector_pos_tolerance", EFF_POS_TOL, EFF_POS_TOL);
     priv.param<double>("effector_ori_tolerance", EFF_ORI_TOL, EFF_ORI_TOL);
     priv.param<double>("joint_angle_tolerance", JOINT_ANGLE_TOL, JOINT_ANGLE_TOL);
+    priv.param<double>("plan_tolerance_factor", PLAN_TOLERANCE_FACTOR, PLAN_TOLERANCE_FACTOR);
 
     REQUEST_OBJECTS_SERVICE="world/request_object";
     priv.param<std::string>("request_object_service", REQUEST_OBJECTS_SERVICE, REQUEST_OBJECTS_SERVICE);
@@ -115,7 +115,17 @@ bool SimpleAutomatedGraspExecution::init()
     jointTrajectoryActionClient->waitForServer();  // will wait for infinite time
     ROS_INFO("Joint trajectory action client has started.");
 
-    return initImpl();
+    std::vector<std::string> gripperLinkNames=jointsManager->getGripperLinks();
+    std::string palmLinkName = jointsManager->getPalmLink();
+    gripperLinkNames.push_back(palmLinkName);
+    
+    graspHandler = new moveit_object_handling::GraspedObjectHandlerMoveIt(node,
+        gripperLinkNames, MOVEIT_GET_PLANNING_SCENE_SERVICE,MOVEIT_SET_PLANNING_SCENE_TOPIC);
+
+    graspHandler->waitForSubscribers();
+
+    initialized = initImpl();
+    return initialized;
 }
 
 bool SimpleAutomatedGraspExecution::getObjectPose(const std::string& object_name, const float timeout_wait_object, geometry_msgs::PoseStamped& pose)
@@ -203,18 +213,16 @@ bool SimpleAutomatedGraspExecution::setFingersToCurr(const sensor_msgs::JointSta
 }
 
 int SimpleAutomatedGraspExecution::planAndExecuteMotion(
-    const std::string& object_frame_id,
+    const std::string& fixed_frame_id,
     const std::string& arm_base_link,
     moveit_msgs::Constraints& reachConstraints,
     const float arm_reach_span,
     const std::string& planning_group)
 {
-    // get the current arm base pose in the object frame. This is needed
-    // to generate MoveIt! workspace. This can be in any frame, it can also
-    // be the object frame since the robot is not moving.
+    // get the current arm base pose.
     geometry_msgs::PoseStamped currBasePose;
     int transRet=convenience_ros_functions::ROSFunctions::Singleton()->getTransform(
-            object_frame_id, arm_base_link,
+            fixed_frame_id, arm_base_link,
             currBasePose.pose,
             ros::Time(0),2,true);
     if (transRet!=0) {
@@ -222,11 +230,10 @@ int SimpleAutomatedGraspExecution::planAndExecuteMotion(
         return -1;
     }
     currBasePose.header.stamp=ros::Time::now();
-    currBasePose.header.frame_id=object_frame_id;
+    currBasePose.header.frame_id=fixed_frame_id;
     // ROS_INFO_STREAM("Effector currBasePose pose: "<<currBasePose);
  
     // request joint trajectory
-    RobotInfo robotInfo;
     sensor_msgs::JointState currArmJointState = robotInfo.getCurrentJointState(JOINT_STATES_TOPIC, node);
     // get only the arm joints of the joint state:
     jointsManager->extractFromJointState(currArmJointState,0,currArmJointState);
@@ -283,28 +290,23 @@ int SimpleAutomatedGraspExecution::planAndExecuteMotion(
 }
 
 
-
-SimpleAutomatedGraspFromTop::SimpleAutomatedGraspFromTop(): SimpleAutomatedGraspExecution() {}
-SimpleAutomatedGraspFromTop::~SimpleAutomatedGraspFromTop(){}
-
-bool SimpleAutomatedGraspFromTop::exeTest()
+bool SimpleAutomatedGraspExecution::graspPlan(const std::string& object_name, bool doGrasp, grasp_execution_msgs::GraspGoal& graspGoal)
 {
-    grasp_execution_msgs::GraspGoal graspGoal;
-    if (!generateGrasp(graspGoal))
-    {
-        return false;
-    }
+    if (doGrasp) ROS_INFO_STREAM("###### Grasp Planning #######");
+    else ROS_INFO_STREAM("###### Un-grasp Planning #######");
+    return getGrasp(object_name, doGrasp, graspGoal);
+}
 
-    /////////// Do trajectory planning to reach, and execution  ///////////////////
-
+bool SimpleAutomatedGraspExecution::reach(const std::string& object_name, const grasp_execution_msgs::GraspGoal& graspGoal)
+{
+    ROS_INFO_STREAM("###### Reaching #######");
     std::string effector_link = jointsManager->getEffectorLink();
     std::string arm_base_link = jointsManager->getArmLinks().front();
-    std::string object_frame_id = OBJECT_NAME;
+    std::string object_frame_id = object_name;
   
     // build planning constraints:
-    // XXX TODO parameterize!
-    float plan_eff_pos_tol = EFF_POS_TOL / 2.0;
-    float plan_eff_ori_tol = EFF_ORI_TOL / 2.0;
+    float plan_eff_pos_tol = EFF_POS_TOL * PLAN_TOLERANCE_FACTOR;
+    float plan_eff_ori_tol = EFF_ORI_TOL * PLAN_TOLERANCE_FACTOR;
     int type = 1; // 0 = only position, 1 = pos and ori, 2 = only ori
     moveit_msgs::Constraints reachConstraints = trajectoryPlanner->getPoseConstraint(effector_link,
         graspGoal.grasp.grasp.grasp_pose, plan_eff_pos_tol, plan_eff_ori_tol, type); 
@@ -320,9 +322,12 @@ bool SimpleAutomatedGraspFromTop::exeTest()
         ROS_ERROR_STREAM("Could not plan/execution motion, return code "<<motionRet);
         return false;
     }
-
-    /////////// Send grasp execution action request  ///////////////////
-    ROS_INFO("Grasp action server started. Now sending grasp action goal");
+    return true;
+}
+    
+bool SimpleAutomatedGraspExecution::grasp(const std::string& object_name, const grasp_execution_msgs::GraspGoal& graspGoal)
+{
+    ROS_INFO_STREAM("###### Grasping #######");
     graspActionClient->sendGoal(graspGoal);
 
     //wait for the action to return
@@ -342,19 +347,44 @@ bool SimpleAutomatedGraspFromTop::exeTest()
     }
     ROS_INFO("Grasp action finished: %s",state.toString().c_str());
 
-
-    //////////////////// attach object to MoveIt! robot ////////////////////////
-    std::vector<std::string> gripperLinkNames=jointsManager->getGripperLinks();
+    // attach object to MoveIt! robot
     std::string palmLinkName = jointsManager->getPalmLink();
-    gripperLinkNames.push_back(palmLinkName);
+    graspHandler->attachObjectToRobot(object_name,palmLinkName);
+    return true;
+}
 
-    moveit_object_handling::GraspedObjectHandlerMoveIt graspHandler(node,gripperLinkNames,MOVEIT_GET_PLANNING_SCENE_SERVICE,MOVEIT_SET_PLANNING_SCENE_TOPIC);
-    graspHandler.waitForSubscribers();
-    graspHandler.attachObjectToRobot(OBJECT_NAME,palmLinkName);
+bool SimpleAutomatedGraspExecution::unGrasp(const std::string& object_name, const grasp_execution_msgs::GraspGoal& graspGoal)
+{
+    ROS_INFO_STREAM("###### Grasping #######");
+    graspActionClient->sendGoal(graspGoal);
 
-    //////////////////// Move the arm to home ///////////////////////////
+    //wait for the action to return
+    bool finished_before_timeout = graspActionClient->waitForResult(ros::Duration(15.0));
+    actionlib::SimpleClientGoalState state = graspActionClient->getState();
+    if (state!=actionlib::SimpleClientGoalState::SUCCEEDED)
+    {
+        if (finished_before_timeout)
+        {
+            ROS_ERROR("Could not execute grasp action: %s",state.toString().c_str());
+        }
+        else
+        {
+            ROS_ERROR("Grasp action did not finish before the time out.");
+        }
+        return false;
+    }
+    ROS_INFO("Grasp action finished: %s",state.toString().c_str());
+
+    // dettach object to MoveIt! robot
+    graspHandler->detachObjectFromRobot(object_name);
+    return true;
+}
+
+
+bool SimpleAutomatedGraspExecution::homeArm()
+{
+    ROS_INFO_STREAM("###### Homing arm #######");
     sensor_msgs::JointState homeState=getHomeState(true);
-    RobotInfo robotInfo;
     sensor_msgs::JointState currJointState = robotInfo.getCurrentJointState(JOINT_STATES_TOPIC, node);
     if (!setFingersToCurr(currJointState, homeState))
     {
@@ -362,82 +392,62 @@ bool SimpleAutomatedGraspFromTop::exeTest()
         return false;
     }
 
-    float JOINT_PLAN_TOL=JOINT_ANGLE_TOL/2;
+    float JOINT_PLAN_TOL=JOINT_ANGLE_TOL * PLAN_TOLERANCE_FACTOR;
     moveit_msgs::Constraints homeConstraints = trajectoryPlanner->getJointConstraint(homeState,JOINT_PLAN_TOL); 
+    
+    std::string arm_base_link = jointsManager->getArmLinks().front();
 
     int homeMotionRet = planAndExecuteMotion(
-        object_frame_id,
+        arm_base_link,
         arm_base_link,
         homeConstraints,
         ARM_REACH_SPAN,
         PLANNING_GROUP);
     if (homeMotionRet !=0)
     {
-        ROS_ERROR_STREAM("Could not plan/execution motion to HOME, return code "<<motionRet);
+        ROS_ERROR_STREAM("Could not plan/execution motion to HOME, return code "<<homeMotionRet);
         return false;
     }
     return true;
 }
-    
 
 
-bool SimpleAutomatedGraspFromTop::initImpl()
+bool SimpleAutomatedGraspExecution::graspHomeAndUngrasp(const std::string& object_name)
 {
-    ros::NodeHandle priv("~");
-    priv.param<double>("pose_above_object", POSE_ABOVE, POSE_ABOVE);
-    priv.param<double>("x_from_object", POSE_X, POSE_X);
-    priv.param<double>("y_from_object", POSE_Y, POSE_Y);
-    return true; 
-}
-
-
-bool SimpleAutomatedGraspFromTop::generateGrasp(grasp_execution_msgs::GraspGoal& graspGoal)
-{
-    /////////// Get object pose  ///////////////////
-        
-    geometry_msgs::PoseStamped obj_pose;
-    float maxWaitObject=2; 
-    if (!getObjectPose(OBJECT_NAME, maxWaitObject, obj_pose))
+    grasp_execution_msgs::GraspGoal graspGoal;
+    if (!graspPlan(object_name, true, graspGoal))
     {
-        ROS_ERROR("Could not get pose of object %s", OBJECT_NAME.c_str());
+        ROS_ERROR_STREAM("Could not plan the grasp for "<<object_name);
+        return false;
+    }
+    if (!reach(object_name, graspGoal))
+    {
+        ROS_ERROR_STREAM("Could not reach to "<<object_name);
         return false;
     }
     
-    /////////// Generate grasp  ///////////////////
-
-    std::string object_frame_id = OBJECT_NAME;
-
-    std::vector<std::string> gripperJoints = jointsManager->getGripperJoints();
-    std::string arm_base_link = jointsManager->getArmLinks().front();
-    std::string effector_link = jointsManager->getEffectorLink();
-    
-    manipulation_msgs::Grasp mgrasp;
-    bool genGraspSuccess = grasp_execution::SimpleGraspGenerator::generateSimpleGraspFromTop(
-        gripperJoints,
-        arm_base_link,
-        "TestGrasp",
-        OBJECT_NAME,        
-        obj_pose,
-        object_frame_id,
-        POSE_ABOVE, POSE_X, POSE_Y,
-        OPEN_ANGLES, CLOSE_ANGLES,
-        mgrasp);
-
-    if (!genGraspSuccess)
+    if (!grasp(object_name, graspGoal))
     {
-        ROS_ERROR("Could not generate grasp");
+        ROS_ERROR_STREAM("Could not grasp "<<object_name);
         return false;
     }
-
-    // ROS_INFO_STREAM("generated manipulation_msgs::Grasp: "<<std::endl<<mgrasp);
-    bool isGrasp = true;
-    grasp_execution::SimpleGraspGenerator::generateSimpleGraspGoal(effector_link,
-        mgrasp,0, isGrasp, graspGoal);
-
-    grasp_execution::SimpleGraspGenerator::useCustomTolerances(EFF_POS_TOL,
-        EFF_ORI_TOL, JOINT_ANGLE_TOL, graspGoal);
-
-    // ROS_INFO("################################");
-    // ROS_INFO_STREAM("Generated grasp_execution_msgs::Grasp: "<<std::endl<<graspGoal);
+    
+    if (!homeArm())
+    {
+        ROS_ERROR_STREAM("Could not home the arm after grasping "<<object_name);
+        return false;
+    }
+    grasp_execution_msgs::GraspGoal ungraspGoal;
+    if (!graspPlan(object_name, false, ungraspGoal))
+    {
+        ROS_ERROR_STREAM("Could not plan the grasp for "<<object_name);
+        return false;
+    }
+ 
+    if (!unGrasp(object_name, ungraspGoal))
+    {
+        ROS_ERROR_STREAM("Could not un-grasp "<<object_name);
+        return false;
+    }
     return true;
-}    
+}

@@ -1,0 +1,17 @@
+robot_namespace: jaco
+
+grasp_control_action_topic: /jaco/grasp_execution/grasp_control
+
+joint_control_topic: /jaco/joint_control
+
+joint_states_topic: /jaco/joint_state
+
+check_movement_rate: 30
+
+no_move_tolerance: 0.05
+
+no_move_still_cnt: 20
+
+goal_tolerance: 0.02
+
+

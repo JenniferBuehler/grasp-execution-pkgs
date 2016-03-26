@@ -1,0 +1,24 @@
+# name of the action topic to be offered by this server
+grasp_action_topic: /grasp_execution/grasp
+
+# name (topic) where the action server for GraspControl.action is being offered
+grasp_control_action_topic: /grasp_execution/grasp_control
+
+# topic where the joint states are being published
+joint_states_topic: /joint_states
+
+# default tolerance for the effector target pose and actual effector pose to be
+# similar enough to accept a grasp action.
+# Can be overriden by different values in the Grasp.action.
+effector_pos_tolerance: 0.02
+
+# default tolerance for the effector target orientation and actual effector orientation to be
+# similar enough to accept a grasp action (in rad).
+# Can be overriden by different values in the Grasp.action.
+effector_ori_tolerance: 0.05
+
+# default tolerance for the joints (in rad) when checking against joint state targets
+# Can be overriden by different values in the Grasp.action.
+joint_angles_tolerance: 0.05
+
+

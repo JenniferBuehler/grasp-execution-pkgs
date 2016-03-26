@@ -1,33 +1,10 @@
 <launch>
-    # name of the action topic to be offered by this server
-    <arg name="grasp_action_topic" default="/grasp_execution/grasp"/>
+    # Configuration file for the grasp action server.
+    <arg name="config_file" default="$(find grasp_execution)/config/GraspActionServer.yaml"/>
 
-    # name (topic) where the action server for GraspControl.action is being offered
-    <arg name="grasp_control_action_topic" default="/grasp_execution/grasp_control"/>
-
-    # topic where the joint states are being published
-    <arg name="joint_states_topic" default="/joint_states"/>
-
- 	# default tolerance for the effector target pose and actual effector pose to be
-	# similar enough to accept a grasp action.
-    # Can be overriden by different values in the Grasp.action.
-	<arg name="effector_pos_tolerance" default="0.02"/>
-
- 	# default tolerance for the effector target orientation and actual effector orientation to be
-	# similar enough to accept a grasp action (in rad).
-    # Can be overriden by different values in the Grasp.action.
-    <arg name="effector_ori_tolerance" default="0.05"/>
-    
-    # default tolerance for the joints (in rad) when checking against joint state targets
-    # Can be overriden by different values in the Grasp.action.
-    <arg name="joint_angles_tolerance" default="0.05"/>
-    
-	<node name="simple_grasp_action_server" pkg="grasp_execution" type="simple_grasp_action_server_node" output="screen">
-        <param name="joint_states_topic" value="$(arg joint_states_topic)"/>
-        <param name="grasp_control_action_topic" value="$(arg grasp_control_action_topic)"/>
-        <param name="grasp_action_topic" value="$(arg grasp_action_topic)"/>
-        <param name="effector_pos_tolerance" value="$(arg effector_pos_tolerance)"/>
-        <param name="effector_ori_tolerance" value="$(arg effector_ori_tolerance)"/>
-        <param name="joint_angles_tolerance" value="$(arg joint_angles_tolerance)"/>
-    </node>
+    # Load the ROS parameters from config file: 
+    <arg name="node_name" default="simple_grasp_action_server"/>
+    <rosparam ns="$(arg node_name)" file="$(arg config_file)"/>
+ 
+	<node name="simple_grasp_action_server" pkg="grasp_execution" type="simple_grasp_action_server_node" output="screen"/>
 </launch>

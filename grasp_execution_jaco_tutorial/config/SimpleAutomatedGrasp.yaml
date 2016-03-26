@@ -1,6 +1,3 @@
-# name of the object to grasp
-object_name: cube1
-
 # namespace of the robot which is used to load the ArmComponentsNameManager.
 # For this node to work, the parameters must
 # have been launched with a launch file like in
@@ -8,7 +5,7 @@ object_name: cube1
 robot_namespace: jaco
 
 # end effector to be positioned this much above object (z-direction)
-pose_above_object: 0.165
+pose_above_object: 0.175
 
 # end effector to be positioned relative to object (x-direction)
 x_from_object: 0.0
@@ -25,6 +22,7 @@ close_angles: 0.6
 effector_pos_tolerance: 0.02
 effector_ori_tolerance: 0.1
 joint_angle_tolerance: 0.05
+plan_tolerance_factor: 0.1
 
 # the span of the arm (from the arm base) when it's
 # stretched out at its max

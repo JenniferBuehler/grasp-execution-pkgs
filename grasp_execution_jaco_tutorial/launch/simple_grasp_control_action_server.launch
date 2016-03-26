@@ -1,12 +1,5 @@
 <launch>
     <include file="$(find grasp_execution)/launch/simple_grasp_control_action_server.launch">
-        <arg name="robot_namespace" value="jaco"/>
-        <arg name="grasp_control_action_topic" value="/jaco/grasp_execution/grasp_control"/>
-        <arg name="joint_control_topic" value="/jaco/joint_control"/>
-        <arg name="joint_states_topic" value="/jaco/joint_state"/>
-        <arg name="check_movement_rate" value="20"/>
-        <arg name="no_move_tolerance" value="0.05"/>
-        <arg name="no_move_still_cnt" value="5"/>
-        <arg name="goal_tolerance" value="0.02"/>
+        <arg name="config_file" value="$(find grasp_execution_jaco_tutorial)/config/GraspControlActionServer.yaml"/>
     </include>
 </launch>
