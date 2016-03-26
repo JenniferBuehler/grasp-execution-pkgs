@@ -54,7 +54,7 @@ find_package(catkin REQUIRED COMPONENTS
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
   INCLUDE_DIRS include
-  LIBRARIES simple_grasp_control_server simple_grasp_action_server 
+  LIBRARIES simple_grasp_control_server simple_grasp_action_server simple_automated_grasp_execution 
   CATKIN_DEPENDS control_msgs grasp_execution_msgs roscpp
         std_msgs control_msgs trajectory_msgs architecture_binding arm_components_name_manager
         convenience_math_functions convenience_ros_functions
@@ -88,6 +88,13 @@ add_library(simple_grasp_action_server
 )
 add_dependencies(simple_grasp_action_server ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
+add_library(simple_automated_grasp_execution
+  src/SimpleAutomatedGraspExecution.cpp
+)
+add_dependencies(simple_automated_grasp_execution ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+
+
+
 add_executable(simple_grasp_control_server_node src/simple_grasp_control_server_node.cpp)
 add_dependencies(simple_grasp_control_server_node simple_grasp_control_server ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
@@ -100,8 +107,8 @@ add_dependencies(simple_grasp_control_client simple_grasp_control_server ${${PRO
 add_executable(simple_grasp_action_client test/simple_grasp_action_client.cpp)
 add_dependencies(simple_grasp_action_client simple_grasp_action_server ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
-add_executable(simple_automated_grasp_execution test/simple_automated_grasp_execution.cpp)
-add_dependencies(simple_automated_grasp_execution simple_grasp_action_server ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_executable(simple_automated_grasp_execution_node test/simple_automated_grasp_execution.cpp)
+add_dependencies(simple_automated_grasp_execution_node simple_grasp_action_server ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 target_link_libraries(simple_grasp_control_server
   ${catkin_LIBRARIES}
@@ -130,6 +137,11 @@ target_link_libraries(simple_grasp_action_client
 )
 
 target_link_libraries(simple_automated_grasp_execution
+  ${catkin_LIBRARIES}
+)
+
+target_link_libraries(simple_automated_grasp_execution_node
+  simple_automated_grasp_execution
   ${catkin_LIBRARIES}
 )
 
