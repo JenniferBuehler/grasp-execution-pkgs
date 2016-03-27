@@ -6,5 +6,5 @@
     <arg name="node_name" default="simple_grasp_control_server"/>
     <rosparam ns="$(arg node_name)" file="$(arg config_file)"/>
 
-	<node name="simple_grasp_control_server" pkg="grasp_execution" type="simple_grasp_control_server_node" output="screen"/>
+	<node name="$(arg node_name)" pkg="grasp_execution" type="simple_grasp_control_server_node" output="screen"/>
 </launch>

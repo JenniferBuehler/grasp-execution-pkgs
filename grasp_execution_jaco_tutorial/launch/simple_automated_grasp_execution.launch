@@ -9,12 +9,18 @@
     # the frame where the cube will be spawned
     <arg name="gazebo_spawn_frame" default="robot_base"/>    
     <arg name="cube_name" default="cube1"/>
-    <arg name="cube_x" default="0.2"/>
+    # The x-direction is to/away from the robot arm, while y is left/right
+    <arg name="cube_x" default="0.1"/>
     <arg name="cube_y" default="0"/>
     <arg name="cube_z" default="0.76"/>
 
-    <include file="$(find grasp_execution)/launch/simple_automated_grasp_from_top.launch">
+    <arg name="run_type" default="1"/>
+    <arg name="grasp_filename" default=""/>
+
+    <include file="$(find grasp_execution)/launch/simple_automated_grasp_execution.launch">
         <arg name="config_file" value="$(arg config_file)"/>
+        <arg name="run_type" value="$(arg run_type)"/>
+        <arg name="grasp_filename" value="$(arg grasp_filename)"/>
         <arg name="cube_name" value="$(arg cube_name)"/>
         <arg name="gazebo_spawn_frame" value="$(arg gazebo_spawn_frame)"/>
         <arg name="cube_x" value="$(arg cube_x)"/>

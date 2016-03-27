@@ -91,6 +91,7 @@ add_dependencies(simple_grasp_action_server ${${PROJECT_NAME}_EXPORTED_TARGETS} 
 add_library(simple_automated_grasp_execution
   src/SimpleAutomatedGraspExecution.cpp
   src/SimpleAutomatedGraspFromTop.cpp
+  src/SimpleAutomatedGraspFromFile.cpp
 )
 add_dependencies(simple_automated_grasp_execution ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
@@ -108,8 +109,8 @@ add_dependencies(simple_grasp_control_client simple_grasp_control_server ${${PRO
 add_executable(simple_grasp_action_client test/simple_grasp_action_client.cpp)
 add_dependencies(simple_grasp_action_client simple_grasp_action_server ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
-add_executable(simple_automated_grasp_from_top src/simple_automated_grasp_from_top.cpp)
-add_dependencies(simple_automated_grasp_from_top simple_automated_grasp_execution simple_grasp_action_server ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_executable(simple_automated_grasp_execution_node src/simple_automated_grasp_execution.cpp)
+add_dependencies(simple_automated_grasp_execution_node simple_automated_grasp_execution simple_grasp_action_server ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 target_link_libraries(simple_grasp_control_server
   ${catkin_LIBRARIES}
@@ -141,7 +142,7 @@ target_link_libraries(simple_automated_grasp_execution
   ${catkin_LIBRARIES}
 )
 
-target_link_libraries(simple_automated_grasp_from_top
+target_link_libraries(simple_automated_grasp_execution_node
   simple_automated_grasp_execution
   ${catkin_LIBRARIES}
 )
@@ -164,7 +165,7 @@ target_link_libraries(simple_automated_grasp_from_top
 install(TARGETS 
     simple_grasp_control_server simple_grasp_control_server_node simple_grasp_control_client
     simple_grasp_action_server simple_grasp_action_server_node 
-    simple_automated_grasp_execution simple_automated_grasp_from_top 
+    simple_automated_grasp_execution simple_automated_grasp_execution_node 
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}

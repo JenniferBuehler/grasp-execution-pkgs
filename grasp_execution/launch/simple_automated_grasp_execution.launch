@@ -7,6 +7,14 @@
     # cube name
     <arg name="cube_name"/>
 
+    # which automated execution to launch:
+    # 1 = simple grasp from top
+    # 2 = grasp from file. Requires argument grasp_filename to be set.
+    # 3 = on-line grasp planning
+    <arg name="run_type" default="1"/>
+    
+    <arg name="grasp_filename" default=""/>
+
     # the frame where the cube will be spawned
     <arg name="gazebo_spawn_frame"/>    
     
@@ -28,12 +36,11 @@
         <arg name="in_frame" value="$(arg gazebo_spawn_frame)"/>
     </include>    
 
-
-
     # Load the ROS parameters from config file: 
     <arg name="node_name" default="simple_automated_grasp_execution"/>
     <rosparam ns="$(arg node_name)" file="$(arg config_file)"/>
     
     # launch the node
-    <node name="simple_automated_grasp_execution" pkg="grasp_execution" type="simple_automated_grasp_from_top" args="$(arg cube_name)" output="screen"/>
+    <node name="simple_automated_grasp_execution" pkg="grasp_execution" type="simple_automated_grasp_execution_node"
+        args="$(arg cube_name) $(arg run_type) $(arg grasp_filename)" output="screen"/>
 </launch>
