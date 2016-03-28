@@ -1,6 +1,9 @@
 <launch>
     # Load the grasp fix plugin for gazebo?
     <arg name="load_grasp_fix" default="false"/>
+    <arg name="load_graspit_planner" default="false"/>
+    # if load_graspit_planner is true, specify the output directory here
+    <arg name="planning_results_directory" default="/tmp/graspit_results"/>
 
     #################################
     # Launch Jaco in Gazebo with the
@@ -14,4 +17,12 @@
     # Launch MoveIt component for Jaco
     ########################################
     <include file="$(find jaco_on_table_moveit)/launch/jaco_on_table_moveit.launch"/>
+    
+    #########################################
+    # Launch GraspIt! planner [optional]
+    ########################################
+    <include if="$(arg load_graspit_planner)"
+        file="$(find grasp_planning_graspit_ros)/launch/grasp_planning_service.launch">
+        <arg name="results_output_directory" value="$(arg planning_results_directory)"/>
+    </include>
 </launch>

@@ -4,10 +4,35 @@
 # $(find arm_components_name_manager)/launch/init_params.launch.
 robot_namespace: the-robot-namespace
 
-# angles to set all the finger joints to when grasping
+# Only needed for on-line grasp planning.
+# Name of the robot
+robot_name: robot-name
+
+# Only needed for on-line grasp planning.
+# the names of the URDF joint names in the
+# order they are specified in the graspit file (robot_filename).
+robot_finger_joint_names:
+    - joint1
+    - joint2
+    - ...
+
+# Pose for the object in the GraspIt! world
+# such that it lies on the table (specified in table_filename)
+graspit_object_pose:
+    x: 0
+    y: 0
+    z: 0
+    qx: 0
+    qy: 0
+    qz: 0
+    qw: 1
+
+# Only needed for simple pre-generated grasp.
+# Angles to set all the finger joints to when grasping
 open_angles: 0.05
 
-# angles to set all the finger joints to when un-grasping
+# Only needed for simple pre-generated grasp.
+# Angles to set all the finger joints to when un-grasping
 close_angles: 0.6
 
 # Tolerance of expected end effector pose for a grasp.
@@ -57,3 +82,5 @@ moveit_get_planning_scene_service: /get_planning_scene
 
 # MoveIt! topic to set planning scene
 moveit_set_planning_scene_topic: /planning_scene
+
+

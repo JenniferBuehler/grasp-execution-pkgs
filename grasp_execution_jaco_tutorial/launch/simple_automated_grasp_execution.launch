@@ -10,12 +10,16 @@
     <arg name="gazebo_spawn_frame" default="robot_base"/>    
     <arg name="cube_name" default="cube1"/>
     # The x-direction is to/away from the robot arm, while y is left/right
-    <arg name="cube_x" default="0.1"/>
+    <arg name="cube_x" default="0.2"/>  # 0.5 for grasping cube from other end
     <arg name="cube_y" default="0"/>
     <arg name="cube_z" default="0.76"/>
 
     <arg name="run_type" default="1"/>
-    <arg name="grasp_filename" default=""/>
+    <arg name="grasp_filename" default="$(find jaco_graspit_sample)/example_grasps/Grasp_1.msg"/>
+    <arg name="robot_filename" default="$(find jaco_graspit_sample)/models/robots/jaco_robot/jaco_robot.xml"/>
+    <arg name="object_filename" default="$(find jaco_graspit_sample)/models/objects/small_cube.xml"/>
+    <arg name="table_filename" default="$(find jaco_graspit_sample)/models/obstacles/table.xml"/>
+    <arg name="results_directory" default="/tmp/simple_automated_grasp_execution/"/>
 
     <include file="$(find grasp_execution)/launch/simple_automated_grasp_execution.launch">
         <arg name="config_file" value="$(arg config_file)"/>
@@ -26,5 +30,9 @@
         <arg name="cube_x" value="$(arg cube_x)"/>
         <arg name="cube_y" value="$(arg cube_y)"/>
         <arg name="cube_z" value="$(arg cube_z)"/>
+        <arg name="robot_filename" value="$(arg robot_filename)"/>
+        <arg name="object_filename" value="$(arg object_filename)"/>
+        <arg name="table_filename" value="$(arg table_filename)"/>
+        <arg name="results_directory" value="$(arg results_directory)"/>
     </include>    
 </launch>

@@ -429,7 +429,7 @@ bool SimpleAutomatedGraspExecution::graspHomeAndUngrasp(const std::string& objec
         ROS_ERROR_STREAM("Could not grasp "<<object_name);
         return false;
     }
-   /* 
+    
     ROS_INFO_STREAM("###### Homing arm #######");
     if (!homeArm())
     {
@@ -449,6 +449,6 @@ bool SimpleAutomatedGraspExecution::graspHomeAndUngrasp(const std::string& objec
     {
         ROS_ERROR_STREAM("Could not un-grasp "<<object_name);
         return false;
-    }*/
+    }
     return true;
 }

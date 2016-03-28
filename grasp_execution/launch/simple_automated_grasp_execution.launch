@@ -13,6 +13,7 @@
     # 3 = on-line grasp planning
     <arg name="run_type" default="1"/>
     
+    # Filename of grasp to be loaded (only needed for run_type 2)
     <arg name="grasp_filename" default=""/>
 
     # the frame where the cube will be spawned
@@ -22,6 +23,25 @@
     <arg name="cube_x" default="0"/>
     <arg name="cube_y" default="0"/>
     <arg name="cube_z" default="1"/>
+
+    # Only needed for on-line grasp planning.
+    # The file with the GraspIt! robot definition
+    <arg name="robot_filename" default=""/>
+
+    # Only needed for on-line grasp planning.
+    # The file with the GraspIt! object definition
+    <arg name="object_filename" default=""/>
+
+    # Only needed for on-line grasp planning.
+    # The file with the GraspIt! table definition.
+    # Will be loaded in the GraspIt! origin.
+    <arg name="table_filename" default=""/>
+
+    # Only needed for on-line grasp planning.
+    # Directory where to save the results of the on-line planning. Set to empty
+    # if results should not be saved.
+    <arg name="results_directory" default=""/>
+
 
     ##############################################################
     # Launch the nodes
@@ -39,8 +59,22 @@
     # Load the ROS parameters from config file: 
     <arg name="node_name" default="simple_automated_grasp_execution"/>
     <rosparam ns="$(arg node_name)" file="$(arg config_file)"/>
-    
+
+    # Load ROS default parameters for the EigenGraspPlannerClient.
+    # Only needed for run_type 3
+    <include file="$(find grasp_planning_graspit_ros)/launch/eigengrasp_planner_client_params.launch">
+        <arg name="node_name" value="$(arg node_name)"/>
+    </include>
+ 
     # launch the node
     <node name="simple_automated_grasp_execution" pkg="grasp_execution" type="simple_automated_grasp_execution_node"
-        args="$(arg cube_name) $(arg run_type) $(arg grasp_filename)" output="screen"/>
+        args="$(arg cube_name) $(arg run_type) $(arg grasp_filename)" output="screen">
+        <param name="object_name" value="$(arg cube_name)"/>
+        <param name="run_type" value="$(arg run_type)"/>
+        <param name="grasp_filename" value="$(arg grasp_filename)"/>
+        <param name="robot_filename" value="$(arg robot_filename)"/>
+        <param name="object_filename" value="$(arg object_filename)"/>
+        <param name="table_filename" value="$(arg table_filename)"/>
+        <param name="results_directory" value="$(arg results_directory)"/>
+    </node>
 </launch>

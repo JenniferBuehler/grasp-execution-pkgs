@@ -21,6 +21,7 @@ find_package(catkin REQUIRED COMPONENTS
   eigen_conversions
   moveit_planning_helper
   moveit_object_handling
+  grasp_planning_graspit_ros
 )
 
 ################################################
@@ -62,6 +63,7 @@ catkin_package(
         actionlib actionlib_msgs
         moveit_planning_helper
         moveit_object_handling
+        grasp_planning_graspit_ros
 #  DEPENDS system_lib
 )
 
@@ -92,6 +94,7 @@ add_library(simple_automated_grasp_execution
   src/SimpleAutomatedGraspExecution.cpp
   src/SimpleAutomatedGraspFromTop.cpp
   src/SimpleAutomatedGraspFromFile.cpp
+  src/SimpleAutomatedGraspOnlinePlanning.cpp
 )
 add_dependencies(simple_automated_grasp_execution ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 

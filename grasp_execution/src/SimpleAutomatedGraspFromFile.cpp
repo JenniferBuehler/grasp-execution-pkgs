@@ -18,7 +18,6 @@ bool SimpleAutomatedGraspFromFile::initImpl()
 
 bool SimpleAutomatedGraspFromFile::getGrasp(const std::string& object_name, bool isGrasp, grasp_execution_msgs::GraspGoal& graspGoal)
 {
-
     manipulation_msgs::Grasp grasp;
     if (!ROSFunctions::readFromFile(filename,grasp,true))
     {
@@ -27,11 +26,6 @@ bool SimpleAutomatedGraspFromFile::getGrasp(const std::string& object_name, bool
     }
 
     grasp.grasp_pose.header.frame_id=object_name;
-    grasp.grasp_pose.pose.position.z+=0.05;
-    //float tmpX=grasp.grasp_pose.pose.position.x;
-    //grasp.grasp_pose.pose.position.x=grasp.grasp_pose.pose.position.y;
-    //grasp.grasp_pose.pose.position.y=tmpX;
-    
     ROS_INFO_STREAM("Read grasp from file: "<<grasp);
 
     // ROS_INFO_STREAM("generated manipulation_msgs::Grasp: "<<std::endl<<mgrasp);
