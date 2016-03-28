@@ -7,6 +7,14 @@
     # cube name
     <arg name="cube_name"/>
 
+    # the frame where the cube will be spawned
+    <arg name="gazebo_spawn_frame"/>    
+    
+    # where to spawn the cube, relative to gazebo_spawn_frame:
+    <arg name="cube_x" default="0"/>
+    <arg name="cube_y" default="0"/>
+    <arg name="cube_z" default="1"/>
+
     # which automated execution to launch:
     # 1 = simple grasp from top
     # 2 = grasp from file. Requires argument grasp_filename to be set.
@@ -15,14 +23,6 @@
     
     # Filename of grasp to be loaded (only needed for run_type 2)
     <arg name="grasp_filename" default=""/>
-
-    # the frame where the cube will be spawned
-    <arg name="gazebo_spawn_frame"/>    
-    
-    # where to spawn the cube, relative to gazebo_spawn_frame:
-    <arg name="cube_x" default="0"/>
-    <arg name="cube_y" default="0"/>
-    <arg name="cube_z" default="1"/>
 
     # Only needed for on-line grasp planning.
     # The file with the GraspIt! robot definition

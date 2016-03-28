@@ -21,7 +21,7 @@ no_move_tolerance: 0.05
 
 # Number of times at which a joint has not moved (at interval check_movement_rate 
 # and not moved more than no_move_tolerance) at which point it is considered "still".
-no_move_still_cnt: 20
+no_move_still_cnt: 30
 
 # tolerance (in radian) at which a goal pose of the grippers
 # is considered reached
