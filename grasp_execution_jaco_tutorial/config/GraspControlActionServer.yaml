@@ -6,11 +6,11 @@ joint_control_topic: /jaco/joint_control
 
 joint_states_topic: /jaco/joint_state
 
-check_movement_rate: 30
+check_movement_rate: 20
 
-no_move_tolerance: 0.05
+no_move_tolerance: 0.03
 
-no_move_still_cnt: 20
+no_move_still_cnt: 30
 
 goal_tolerance: 0.02
 
