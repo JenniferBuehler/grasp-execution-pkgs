@@ -8,7 +8,7 @@
 #include <grasp_execution_msgs/GraspControlAction.h>
 #include <sensor_msgs/JointState.h>
 
-#include <architecture_binding/Thread.h>
+#include <baselib_binding/Thread.h>
 #include <arm_components_name_manager/ArmComponentsNameManager.h>
 #include <arm_components_name_manager/ArmJointStateSubscriber.h>
 
@@ -78,7 +78,7 @@ class SimpleGraspControlServer:
 
 	
 	private: 
-    typedef architecture_binding::unique_lock<architecture_binding::mutex>::type unique_lock;	
+    typedef baselib_binding::unique_lock<baselib_binding::mutex>::type unique_lock;	
 	
 
 	/**
@@ -144,7 +144,7 @@ class SimpleGraspControlServer:
      *  thread to run the loop updateGrippersCheckLoop() at the rate of
      *  gripper_angles_check_freq
      */
-    architecture_binding::thread * gripper_check_thread;
+    baselib_binding::thread * gripper_check_thread;
 
     /*
 	 *  number of times the grippers have not moved since the last check (since last_gripper_angles)
@@ -179,7 +179,7 @@ class SimpleGraspControlServer:
      *  by goal_lock.
      */
 	std::vector<float> target_gripper_angles;
-    architecture_binding::recursive_mutex target_gripper_angles_mutex;
+    baselib_binding::recursive_mutex target_gripper_angles_mutex;
 
 	ros::Publisher joint_control_pub;
 

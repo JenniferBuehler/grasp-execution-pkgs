@@ -136,7 +136,7 @@ void SimpleGraspControlServer::actionCallbackImpl(const ActionGoalHandleT& goal)
  
     // start the thread which continuously checks if the grippers are not moving any more	
     if (gripper_check_thread) cancelGripperCheckThread();
-    gripper_check_thread = new architecture_binding::thread(updateGrippersCheckLoop, this, gripper_angles_check_freq);
+    gripper_check_thread = new baselib_binding::thread(updateGrippersCheckLoop, this, gripper_angles_check_freq);
 }
 
 void SimpleGraspControlServer::actionCancelCallbackImpl(ActionGoalHandleT& goal)

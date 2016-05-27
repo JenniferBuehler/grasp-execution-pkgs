@@ -3,7 +3,7 @@
 
 #include <grasp_execution_msgs/GraspAction.h>
 #include <grasp_execution/GraspEligibilityChecker.h>
-#include <architecture_binding/SharedPtr.h>
+#include <baselib_binding/SharedPtr.h>
 #include <convenience_ros_functions/ActionServer.h>
 
 namespace grasp_execution
@@ -28,7 +28,7 @@ protected:
     typedef convenience_ros_functions::ActionServer<grasp_execution_msgs::GraspAction> ActionServerT;
        
 public:
-    typedef architecture_binding::shared_ptr<grasp_execution::GraspEligibilityChecker>::type GraspEligibilityCheckerPtr;
+    typedef baselib_binding::shared_ptr<grasp_execution::GraspEligibilityChecker>::type GraspEligibilityCheckerPtr;
 
     /**
      * \param _grasp_action_topic name/topic of this action server.

@@ -48,7 +48,7 @@ int main(int argc, char**argv){
         EFFECTOR_ORI_TOLERANCE,
         JOINT_ANGLES_TOLERANCE);
 
-    typedef architecture_binding::shared_ptr<grasp_execution::GraspEligibilityChecker>::type GraspEligibilityCheckerPtr;
+    typedef baselib_binding::shared_ptr<grasp_execution::GraspEligibilityChecker>::type GraspEligibilityCheckerPtr;
 	GraspEligibilityCheckerPtr eligibilityChecker(_eligibilityChecker);
 
 	grasp_execution::SimpleGraspActionServer actionServer(
