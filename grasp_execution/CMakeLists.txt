@@ -56,23 +56,28 @@ find_package(catkin REQUIRED COMPONENTS
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES simple_grasp_control_server simple_grasp_action_server simple_automated_grasp_execution 
-  CATKIN_DEPENDS control_msgs grasp_execution_msgs roscpp
-        std_msgs control_msgs trajectory_msgs 
+  CATKIN_DEPENDS control_msgs
+        grasp_execution_msgs roscpp
+        std_msgs
+        control_msgs
+        trajectory_msgs 
         baselib_binding
         arm_components_name_manager
-        convenience_math_functions convenience_ros_functions
-        object_msgs object_msgs_tools eigen_conversions
+        convenience_math_functions
+        convenience_ros_functions
+        object_msgs
+        object_msgs_tools
+        eigen_conversions
         actionlib actionlib_msgs
         moveit_planning_helper
         moveit_object_handling
         grasp_planning_graspit_ros
-#  DEPENDS system_lib
 )
 
 ###########
 ## Build ##
 ###########
-add_definitions(${baselib_binding_DEFINITIONS})
+add_definitions(${baselib_binding_DEFINITIONS} ${convenience_ros_functions_DEFINITIONS})
 
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
@@ -100,8 +105,6 @@ add_library(simple_automated_grasp_execution
   src/SimpleAutomatedGraspOnlinePlanning.cpp
 )
 add_dependencies(simple_automated_grasp_execution ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-
-
 
 add_executable(simple_grasp_control_server_node src/simple_grasp_control_server_node.cpp)
 add_dependencies(simple_grasp_control_server_node simple_grasp_control_server ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
@@ -181,15 +184,13 @@ install(TARGETS
 install(DIRECTORY include/${PROJECT_NAME}/
   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
   FILES_MATCHING PATTERN "*.h"
-  PATTERN ".git" EXCLUDE
 )
 
-## Mark other files for installation (e.g. launch and bag files, etc.)
-# install(FILES
-#   # myfile1
-#   # myfile2
-#   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
-# )
+install(DIRECTORY launch
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+  FILES_MATCHING PATTERN "*.launch"
+)
+
 
 #############
 ## Testing ##
