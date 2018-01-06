@@ -4,9 +4,9 @@
 robot_namespace: jaco
 robot_name: jaco
 robot_finger_joint_names:
-    - finger_joint_0
-    - finger_joint_2
-    - finger_joint_4
+    - jaco_finger_joint_0
+    - jaco_finger_joint_2
+    - jaco_finger_joint_4
 
 
 

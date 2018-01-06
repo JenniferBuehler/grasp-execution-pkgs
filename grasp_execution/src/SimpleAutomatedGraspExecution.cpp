@@ -60,7 +60,7 @@ bool SimpleAutomatedGraspExecution::init()
   
     EFF_POS_TOL=0.02;
     EFF_ORI_TOL=0.1;
-    JOINT_ANGLE_TOL=0.05;
+    JOINT_ANGLE_TOL=0.1;
     PLAN_TOLERANCE_FACTOR=0.1;
     priv.param<double>("effector_pos_tolerance", EFF_POS_TOL, EFF_POS_TOL);
     priv.param<double>("effector_ori_tolerance", EFF_ORI_TOL, EFF_ORI_TOL);
@@ -387,10 +387,12 @@ bool SimpleAutomatedGraspExecution::homeArm()
         return false;
     }
 
-    float JOINT_PLAN_TOL=JOINT_ANGLE_TOL * PLAN_TOLERANCE_FACTOR;
+    float JOINT_PLAN_TOL=JOINT_ANGLE_TOL;
     moveit_msgs::Constraints homeConstraints = trajectoryPlanner->getJointConstraint(homeState,JOINT_PLAN_TOL); 
     
     std::string arm_base_link = jointsManager->getArmLinks().front();
+
+    ROS_INFO_STREAM("Planning for constraints: " << homeConstraints);
 
     int homeMotionRet = planAndExecuteMotion(
         arm_base_link,
