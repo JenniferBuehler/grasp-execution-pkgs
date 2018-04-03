@@ -55,12 +55,12 @@ find_package(catkin REQUIRED COMPONENTS
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
   INCLUDE_DIRS include
-  LIBRARIES simple_grasp_control_server simple_grasp_action_server simple_automated_grasp_execution 
+  LIBRARIES simple_grasp_control_server simple_grasp_action_server simple_automated_grasp_execution
   CATKIN_DEPENDS control_msgs
         grasp_execution_msgs roscpp
         std_msgs
         control_msgs
-        trajectory_msgs 
+        trajectory_msgs
         baselib_binding
         arm_components_name_manager
         convenience_math_functions
@@ -77,12 +77,14 @@ catkin_package(
 ###########
 ## Build ##
 ###########
-add_definitions(${baselib_binding_DEFINITIONS} ${convenience_ros_functions_DEFINITIONS})
+
+# C++11 required on kinetic for MoveIt
+add_definitions(${baselib_binding_DEFINITIONS} ${convenience_ros_functions_DEFINITIONS} -std=c++11)
 
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
 include_directories(
-  include 
+  include
   ${catkin_INCLUDE_DIRS}
 )
 
@@ -171,10 +173,10 @@ target_link_libraries(simple_automated_grasp_execution_node
 # )
 
 ## Mark executables and/or libraries for installation
-install(TARGETS 
+install(TARGETS
     simple_grasp_control_server simple_grasp_control_server_node simple_grasp_control_client
-    simple_grasp_action_server simple_grasp_action_server_node 
-    simple_automated_grasp_execution simple_automated_grasp_execution_node 
+    simple_grasp_action_server simple_grasp_action_server_node
+    simple_automated_grasp_execution simple_automated_grasp_execution_node
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
