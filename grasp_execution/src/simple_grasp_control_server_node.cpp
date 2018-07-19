@@ -4,7 +4,7 @@
 #define DEFAULT_CHECK_FINGER_STATE_RATE 20
 #define DEFAULT_NO_MOVE_TOLERANCE 0.05
 #define DEFAULT_NO_MOVE_STILL_CNT 3 
-#define DEFAULT_GOAL_TOLERANCE 1e-02 
+#define DEFAULT_GOAL_TOLERANCE 5e-02 
 
 /***
  * Starts up a SimpleGraspControlServer.

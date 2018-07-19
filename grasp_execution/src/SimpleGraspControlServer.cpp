@@ -172,9 +172,10 @@ int SimpleGraspControlServer::updateGrippersCheck()
   bool valid=false;
   std::vector<float> gripper_angles=joint_state_subscriber.gripperAngles(valid);
   ros::Time time_gripper_angles=ros::Time::now();
-  if (!valid){
-  ROS_ERROR("SimpleGraspControlServer: Could not get the robot's current gripper state");
-  return -1;
+  if (!valid)
+  {
+    ROS_ERROR("SimpleGraspControlServer: Could not get the robot's current gripper state");
+    return -1;
   }
 
   if (gripper_angles.size() != last_gripper_angles.size())
@@ -206,18 +207,17 @@ int SimpleGraspControlServer::updateGrippersCheck()
     return 1;
   }  
   target_gripper_angles_mutex.unlock();
-
-  if (time_since_last_state.toSec() < 1.0/gripper_angles_check_freq) {
-    //no need to record last gripper state or to check if a gripper stopped moving
-  return 0;
-  }
   
-  //count which of the grippers have not moved since last time
-  for (int i=0; i<gripper_angles.size(); ++i)
+  // count which of the grippers have not moved since last time
+  for (int i=0; i < gripper_angles.size(); ++i)
   {
+    ROS_DEBUG_STREAM("Gripper move diff " << i << ": " <<
+                     (gripper_angles[i]-last_gripper_angles[i])
+                     << ", tolerance is " << NO_MOVE_TOLERANCE);
     float diff=fabs(gripper_angles[i]-last_gripper_angles[i]);
     if (diff < NO_MOVE_TOLERANCE)
     {
+      move_stat[i] = 0;
       ++no_move_stat[i];
     }
     else
@@ -228,7 +228,7 @@ int SimpleGraspControlServer::updateGrippersCheck()
   }
 
   bool allJointsStill = true;
-  for (int i=0; i<gripper_angles.size(); ++i)
+  for (int i = 0; i < gripper_angles.size(); ++i)
   {
     if (no_move_stat[i] < NO_MOVE_STILL_CNT)
     {
@@ -259,15 +259,15 @@ int SimpleGraspControlServer::updateGrippersCheck()
       ++no_move_stat_all;
       if (no_move_stat_all >= NO_MOVE_STILL_CNT)
       {
-        ROS_WARN_STREAM("SimpleGraspControlServer: Detected no gripper to have moved yet for a while, "
-          <<"presuming hand cannot move and is already grasping an object in its initial state.");
+        ROS_WARN_STREAM("SimpleGraspControlServer: Detected no gripper to have moved for a while, "
+          <<"presuming hand cannot move and is already grasping an object, just not in its exact target state.");
         finished = true;
         setExecutionFinished(true);
       }
       else
       {
-        ROS_INFO_STREAM("SimpleGraspControlServer: Detected no gripper to have moved yet, "
-          <<"and hand is still.");
+        ROS_INFO_STREAM("SimpleGraspControlServer: Detected no gripper to have moved, "
+          <<"and hand is still but not in target state.");
       }
     }
     else

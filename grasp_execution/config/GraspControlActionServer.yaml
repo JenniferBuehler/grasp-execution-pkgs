@@ -11,17 +11,17 @@ joint_states_topic: /joint_states
 
 # rate at which the gripper states are checked on the criteria
 # of either being in goal state or not moving any more
-check_movement_rate: 20
+check_movement_rate: 20 
 
 # As soon as a gripper joint moves less than this amount of rads 
-# since the last update of its position, it
+# since the last update of its position (at check_movment_rate), it
 # is considered to not have moved. This is checked at a rate of
-# check_movement_rate 
-no_move_tolerance: 0.05
+# check_movement_rate.
+no_move_tolerance: 0.01
 
 # Number of times at which a joint has not moved (at interval check_movement_rate 
 # and not moved more than no_move_tolerance) at which point it is considered "still".
-no_move_still_cnt: 30
+no_move_still_cnt: 20
 
 # tolerance (in radian) at which a goal pose of the grippers
 # is considered reached
