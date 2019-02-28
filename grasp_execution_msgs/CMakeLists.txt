@@ -10,7 +10,7 @@ find_package(catkin REQUIRED COMPONENTS
   sensor_msgs
   geometry_msgs
   trajectory_msgs
-  manipulation_msgs
+  moveit_msgs
 )
 
 ################################################
@@ -60,7 +60,7 @@ add_action_files(
 ## Generate added messages and services with any dependencies listed here
 generate_messages(
   DEPENDENCIES
-  std_msgs sensor_msgs geometry_msgs manipulation_msgs trajectory_msgs
+  std_msgs sensor_msgs geometry_msgs moveit_msgs trajectory_msgs
 )
 
 ###################################
@@ -73,5 +73,5 @@ generate_messages(
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-   CATKIN_DEPENDS message_runtime std_msgs sensor_msgs geometry_msgs manipulation_msgs trajectory_msgs
+   CATKIN_DEPENDS message_runtime std_msgs sensor_msgs geometry_msgs moveit_msgs trajectory_msgs
 )

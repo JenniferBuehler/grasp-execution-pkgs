@@ -2,7 +2,7 @@
 int32 id
 
 # the grasp to perform
-manipulation_msgs/Grasp grasp 
+moveit_msgs/Grasp grasp 
 
 # the name of the effector link (the one which the grasp refers to).
 # This is needed to check whether according to /tf transforms,

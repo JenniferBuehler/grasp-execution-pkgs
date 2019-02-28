@@ -1,4 +1,5 @@
 #include <grasp_execution/SimpleGraspActionServer.h>
+#include "GraspStateHelper.h"
 
 using grasp_execution::SimpleGraspActionServer;
 
@@ -30,12 +31,27 @@ void SimpleGraspActionServer::shutdownImpl(){
 
 void SimpleGraspActionServer::actionCallbackImpl(const ActionGoalHandleT& goal)
 {
-    const manipulation_msgs::Grasp& grasp = goal.getGoal()->grasp.grasp;
+    const moveit_msgs::Grasp& grasp = goal.getGoal()->grasp.grasp;
     if (goal.getGoal()->is_grasp){
-        const sensor_msgs::JointState& graspPosture=grasp.grasp_posture;
+
+        sensor_msgs::JointState graspPosture;
+        int ret = getStateFromTrajectory(grasp.grasp_posture, graspPosture);
+        if (ret != 0)
+        {
+          ROS_ERROR_STREAM("Could not get JointState from JointTrajectory, "
+           << "return code " << ret << ". Won't execute grasp action.");
+          return;
+        }
         this->startGraspExecution(graspPosture);
     }else{ 
-        const sensor_msgs::JointState& graspPosture=grasp.pre_grasp_posture;    
+        sensor_msgs::JointState graspPosture;
+        int ret = getStateFromTrajectory(grasp.pre_grasp_posture, graspPosture);
+        if (ret != 0)
+        {
+          ROS_ERROR_STREAM("Could not get JointState from JointTrajectory, "
+           << "return code " << ret << ". Won't execute grasp action.");
+          return;
+        }
         this->startGraspExecution(graspPosture);
     }
 }

@@ -48,11 +48,12 @@ int main(int argc, char** argv)
         ROS_ERROR("Object name required!");
         return 0;
     } 
+    
     std::string OBJECT_NAME;
-	priv.param<std::string>("object_name", OBJECT_NAME, OBJECT_NAME);
+	  priv.param<std::string>("object_name", OBJECT_NAME, OBJECT_NAME);
 
-	std::string REQUEST_OBJECTS_TOPIC="world/request_object";
-	priv.param<std::string>("request_object_service_topic", REQUEST_OBJECTS_TOPIC, REQUEST_OBJECTS_TOPIC);
+	  std::string REQUEST_OBJECTS_TOPIC="world/request_object";
+	  priv.param<std::string>("request_object_service_topic", REQUEST_OBJECTS_TOPIC, REQUEST_OBJECTS_TOPIC);
 
     std::string ROBOT_NAMESPACE;
     if (!priv.hasParam("robot_namespace"))
@@ -60,7 +61,7 @@ int main(int argc, char** argv)
         ROS_ERROR("Node requires private parameter 'robot_namespace'");
         return 1;
     }
-	priv.param<std::string>("robot_namespace", ROBOT_NAMESPACE, ROBOT_NAMESPACE);
+	  priv.param<std::string>("robot_namespace", ROBOT_NAMESPACE, ROBOT_NAMESPACE);
 
     arm_components_name_manager::ArmComponentsNameManager jointsManager(ROBOT_NAMESPACE, false);
     double maxWait=5;
@@ -75,22 +76,22 @@ int main(int argc, char** argv)
     std::string effector_link = jointsManager.getEffectorLink();
  
     bool GRASPING=true;
-	priv.param<bool>("grasping_action", GRASPING, GRASPING);
+  	priv.param<bool>("grasping_action", GRASPING, GRASPING);
     
     double OPEN_ANGLES=0.05;
-	priv.param<double>("open_angles", OPEN_ANGLES, OPEN_ANGLES);
+  	priv.param<double>("open_angles", OPEN_ANGLES, OPEN_ANGLES);
     double CLOSE_ANGLES=0.7;
-	priv.param<double>("close_angles", CLOSE_ANGLES, CLOSE_ANGLES);
+  	priv.param<double>("close_angles", CLOSE_ANGLES, CLOSE_ANGLES);
 
     std::string GRASP_ACTION_TOPIC = "/grasp_action";
-	priv.param<std::string>("grasp_action_topic", GRASP_ACTION_TOPIC, GRASP_ACTION_TOPIC);
+  	priv.param<std::string>("grasp_action_topic", GRASP_ACTION_TOPIC, GRASP_ACTION_TOPIC);
 
     double EFF_POS_TOL;
-	priv.param<double>("effector_pos_tolerance", EFF_POS_TOL, EFF_POS_TOL);
+  	priv.param<double>("effector_pos_tolerance", EFF_POS_TOL, EFF_POS_TOL);
     double EFF_ORI_TOL;
-	priv.param<double>("effector_ori_tolerance", EFF_ORI_TOL, EFF_ORI_TOL);
+  	priv.param<double>("effector_ori_tolerance", EFF_ORI_TOL, EFF_ORI_TOL);
     double JOINT_ANGLE_TOL;
-	priv.param<double>("joint_angle_tolerance", JOINT_ANGLE_TOL, JOINT_ANGLE_TOL);
+  	priv.param<double>("joint_angle_tolerance", JOINT_ANGLE_TOL, JOINT_ANGLE_TOL);
         
     object_msgs::Object obj;
    
@@ -128,7 +129,7 @@ int main(int argc, char** argv)
     currEffPos.header.frame_id=object_frame_id;
     ROS_INFO_STREAM("Effector currEffPos pose: "<<currEffPos);
     
-    manipulation_msgs::Grasp mgrasp;
+    moveit_msgs::Grasp mgrasp;
     bool genGraspSuccess = grasp_execution::SimpleGraspGenerator::generateSimpleGraspFromTop(
         gripperJoints,
         arm_base_frame,
@@ -145,11 +146,10 @@ int main(int argc, char** argv)
         ROS_ERROR("Could not generate grasp");
         return 0;
     }
-    // ROS_INFO_STREAM("generated manipulation_msgs::Grasp: "<<std::endl<<mgrasp);
+    // ROS_INFO_STREAM("generated moveit_msgs::Grasp: "<<std::endl<<mgrasp);
 
     // overwrite grasp pose with current end effector pose
     mgrasp.grasp_pose = currEffPos;
-
 
     grasp_execution_msgs::GraspGoal graspGoal;
     bool isGrasp = true;
@@ -161,9 +161,6 @@ int main(int argc, char** argv)
     
     ROS_INFO_STREAM("generated grasp_execution_msgs::Grasp: "<<std::endl<<graspGoal);
 
-  
-
-
     // create the action client
     // true causes the client to spin its own thread
     actionlib::SimpleActionClient<grasp_execution_msgs::GraspAction> ac(GRASP_ACTION_TOPIC, true);
@@ -173,13 +170,8 @@ int main(int argc, char** argv)
     ac.waitForServer(); //will wait for infinite time
     ROS_INFO("Action server started.");
 
-
     ROS_INFO("Now sending goal");
     ac.sendGoal(graspGoal);
-
-
-
-
 
     //wait for the action to return
     bool finished_before_timeout = ac.waitForResult(ros::Duration(15.0));
@@ -190,7 +182,10 @@ int main(int argc, char** argv)
         ROS_INFO("Action finished: %s",state.toString().c_str());
     }
     else
+    {
         ROS_INFO("Action did not finish before the time out.");
+    }
 
+    ROS_INFO("Bye bye");
     return 0;
 }

@@ -36,7 +36,7 @@ bool SimpleAutomatedGraspFromTop::getGrasp(const std::string& object_name, bool 
     std::string arm_base_link = jointsManager->getArmLinks().front();
     std::string effector_link = jointsManager->getEffectorLink();
     
-    manipulation_msgs::Grasp mgrasp;
+    moveit_msgs::Grasp mgrasp;
     bool genGraspSuccess = grasp_execution::SimpleGraspGenerator::generateSimpleGraspFromTop(
         gripperJoints,
         arm_base_link,
@@ -54,7 +54,7 @@ bool SimpleAutomatedGraspFromTop::getGrasp(const std::string& object_name, bool 
         return false;
     }
 
-    // ROS_INFO_STREAM("generated manipulation_msgs::Grasp: "<<std::endl<<mgrasp);
+    // ROS_INFO_STREAM("generated moveit_msgs::Grasp: "<<std::endl<<mgrasp);
     grasp_execution::SimpleGraspGenerator::generateSimpleGraspGoal(effector_link,
         mgrasp,0, isGrasp, graspGoal);
 

@@ -13,8 +13,8 @@ namespace grasp_execution
  * This implementation of GraspActionServer simply forwards the target JointState
  * as a grasp_execution_msgs/GraspControl.action. It does not support gripper translation
  * (approach / retreat) and is therefore a very simple implementation. All it does
- * is set the gripper to the manipulation_msgs::Grasp::grasp_posture for a grasp,
- * and to manipulation_msgs::Grasp::pre_grasp_posture for an ungrasp.
+ * is set the gripper to the moveit_msgs::Grasp::grasp_posture for a grasp,
+ * and to moveit_msgs::Grasp::pre_grasp_posture for an ungrasp.
  *
  * \author Jennifer Buehler
  * \date March 2016
@@ -25,7 +25,7 @@ protected:
     typedef actionlib::SimpleActionClient<grasp_execution_msgs::GraspControlAction> GraspControlActionClientT;
     typedef grasp_execution_msgs::GraspControlFeedbackConstPtr GraspControlFeedbackConstPtrT;
     typedef grasp_execution_msgs::GraspControlResultConstPtr GraspControlResultConstPtrT;
-    
+
 public:
 
     /**

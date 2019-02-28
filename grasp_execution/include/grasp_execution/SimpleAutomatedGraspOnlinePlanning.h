@@ -44,7 +44,7 @@ public:
     virtual ~SimpleAutomatedGraspOnlinePlanning();
 
 protected:
-    virtual bool initImpl(); 
+    virtual bool initImpl();
     virtual bool getGrasp(const std::string& object_name, bool isGrasp, grasp_execution_msgs::GraspGoal& graspGoal);
 
 private:
@@ -54,16 +54,16 @@ private:
     std::vector<std::string> robotFingerJointNames;
     std::string objectFilename;
     std::string tableFilename;
-        
+
     geometry_msgs::Pose objectPose;
-   
+
     // only kept so it can be used for following un-grasp
-    manipulation_msgs::Grasp lastPlanResult;
+    moveit_msgs::Grasp lastPlanResult;
     std::string lastPlanObject;
-    
-    int objectID; 
-    
-    grasp_planning_graspit_ros::EigenGraspPlannerClient graspitClient; 
+
+    int objectID;
+
+    grasp_planning_graspit_ros::EigenGraspPlannerClient graspitClient;
 
 };
 

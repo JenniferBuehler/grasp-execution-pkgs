@@ -1,5 +1,6 @@
 #include <grasp_execution/GraspEligibilityChecker.h>
 #include <convenience_ros_functions/ROSFunctions.h>
+#include "GraspStateHelper.h"
 
 using convenience_ros_functions::ROSFunctions;
 using grasp_execution::GraspEligibilityChecker;
@@ -41,7 +42,7 @@ bool GraspEligibilityChecker::checksJointStates()
 bool GraspEligibilityChecker::goalJointStatesConsistent(const GraspGoalT& graspGoal,
         const float useJointAnglesAccuracy) const
 {
-    const manipulation_msgs::Grasp& mgrasp = graspGoal.grasp.grasp;
+    const moveit_msgs::Grasp& mgrasp = graspGoal.grasp.grasp;
     const trajectory_msgs::JointTrajectory traj = graspGoal.grasp_trajectory;
     if (traj.points.empty())
     {
@@ -54,8 +55,21 @@ bool GraspEligibilityChecker::goalJointStatesConsistent(const GraspGoalT& graspG
         ROS_ERROR("Could not get last joint state of grasp trajectory");
         return false;
     }
-    const sensor_msgs::JointState& graspState =
+    const trajectory_msgs::JointTrajectory& graspStateTraj =
         graspGoal.is_grasp ? mgrasp.grasp_posture : mgrasp.pre_grasp_posture;
+    sensor_msgs::JointState graspState;
+    int jsTrans = getStateFromTrajectory(graspStateTraj, graspState);
+    if (jsTrans < 0)
+    {
+      ROS_ERROR("JointTrajectory points is empty in grasp goal posture. Cannot check eligibility.");
+      return false;
+    }
+    if (jsTrans != 0)
+    {
+      ROS_WARN_STREAM("Only one JointTrajectory point supported for grasp, "
+        << "given " << graspStateTraj.points.size() << ". Only using first "
+        << "point and ignoring others.");
+    }
     int ret = ROSFunctions::equalJointPositions(lastTrajPoint, graspState, useJointAnglesAccuracy);
     if (ret > 0) return true;
 
@@ -77,7 +91,7 @@ bool GraspEligibilityChecker::goalJointStatesConsistent(const GraspGoalT& graspG
 bool GraspEligibilityChecker::executionEligible(const GraspGoalT& graspGoal){
 
     const grasp_execution_msgs::GraspData& grasp = graspGoal.grasp;
-    const manipulation_msgs::Grasp& mgrasp = grasp.grasp;
+    const moveit_msgs::Grasp& mgrasp = grasp.grasp;
     const geometry_msgs::PoseStamped& graspPose = mgrasp.grasp_pose;
     const std::string& effectorLinkName = grasp.effector_link_name;
 

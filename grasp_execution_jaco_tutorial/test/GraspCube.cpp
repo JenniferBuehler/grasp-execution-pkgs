@@ -71,7 +71,6 @@ int main(int argc, char **argv)
         }
     }
 
-
     JacoJointManager joints;
     std::string jointStateTopic(JOINT_STATES_TOPIC);
     std::string jointStatePublishTopic(JOINT_CONTROL_TOPIC);
@@ -103,7 +102,7 @@ int main(int argc, char **argv)
     if (!doUngrasp)
     {
 
-        float grasp_position=0.5;
+        float grasp_position=0.53;
         for (int i = 6; i < idx.size(); ++i) grasp_state.position[idx[i]] = grasp_position;
         ROS_INFO_STREAM("Publishing grasp state" << grasp_state);
         pub.publish(grasp_state);
