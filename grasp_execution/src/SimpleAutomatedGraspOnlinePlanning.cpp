@@ -1,7 +1,7 @@
 #include <grasp_execution/SimpleAutomatedGraspOnlinePlanning.h>
 #include <grasp_execution/SimpleGraspGenerator.h>
 #include <convenience_ros_functions/ROSFunctions.h>
-#include <manipulation_msgs/Grasp.h>
+#include <moveit_msgs/Grasp.h>
 
 using grasp_execution::SimpleAutomatedGraspOnlinePlanning;
 
@@ -82,14 +82,15 @@ bool SimpleAutomatedGraspOnlinePlanning::initImpl()
 
 bool SimpleAutomatedGraspOnlinePlanning::getGrasp(const std::string& object_name, bool isGrasp, grasp_execution_msgs::GraspGoal& graspGoal)
 {
-    ROS_INFO_STREAM("SimpleAutomatedGraspOnlinePlanning: Grasping for object "<<object_name);
+    ROS_INFO_STREAM("SimpleAutomatedGraspOnlinePlanning: Grasping for object "
+                    << object_name);
         
-    manipulation_msgs::Grasp grasp;
+    moveit_msgs::Grasp grasp;
 
     if (isGrasp)
     {   // do whole grasp planning
-        std::vector<manipulation_msgs::Grasp> graspResults;
-        int planRet = graspitClient.plan(robotName,objectID, NULL, resultsDirectory, graspResults);
+        std::vector<moveit_msgs::Grasp> graspResults;
+        int planRet = graspitClient.plan(robotName, objectID, NULL, resultsDirectory, graspResults);
         if (planRet != 0)
         {
             ROS_ERROR_STREAM("SimpleAutomatedGraspOnlinePlanning: Could not plan the grasp for object "<<object_name);
@@ -114,7 +115,7 @@ bool SimpleAutomatedGraspOnlinePlanning::getGrasp(const std::string& object_name
         }
         grasp=lastPlanResult;
     }
-    // ROS_INFO_STREAM("generated manipulation_msgs::Grasp: "<<std::endl<<mgrasp);
+    // ROS_INFO_STREAM("generated moveit_msgs::Grasp: "<<std::endl<<mgrasp);
     std::string effector_link = jointsManager->getEffectorLink();
     grasp_execution::SimpleGraspGenerator::generateSimpleGraspGoal(effector_link,
         grasp,0, isGrasp, graspGoal);

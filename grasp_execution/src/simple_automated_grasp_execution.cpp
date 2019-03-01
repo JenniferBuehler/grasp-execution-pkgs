@@ -104,7 +104,6 @@ int main(int argc, char** argv)
 
         priv.getParam("results_directory",RESULTS_DIRECTORY);
     }
-
  
     grasp_execution::SimpleAutomatedGraspExecution * graspExe;
     if (RUN_TYPE == 1) graspExe = new grasp_execution::SimpleAutomatedGraspFromTop();

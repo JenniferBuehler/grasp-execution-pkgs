@@ -21,7 +21,7 @@
     <arg name="open_angles" default="0.05"/>
     
     # angles to set all the finger joints to when un-grasping
-    <arg name="close_angles" default="0.5"/>
+    <arg name="close_angles" default="0.53"/>
         
     # name of the action (topic where it is available)
     <arg name="grasp_action_topic" default="/jaco/grasp_execution/grasp"/>

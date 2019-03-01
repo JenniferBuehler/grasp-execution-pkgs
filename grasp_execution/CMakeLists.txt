@@ -94,6 +94,7 @@ add_library(simple_grasp_control_server
 add_dependencies(simple_grasp_control_server ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 add_library(simple_grasp_action_server
+  src/GraspStateHelper.cpp
   src/GraspEligibilityChecker.cpp
   src/GraspActionServer.cpp
   src/SimpleGraspActionServer.cpp

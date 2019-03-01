@@ -9,13 +9,13 @@ namespace grasp_execution
 
 /**
  * Class that can be used to check for eligibility of grasping and un-grasping actions.
- * 
+ *
  * The action message to be checked is of type grasp_execution_msgs/Grasp.action. Please also refer
  * to this message for documentation about the inputs / outputs.
  *
  * This class provides the option to subscribe to joint states in order to check eligibility criteria.
  *
- * Different implementations for handling the eligibility checks 
+ * Different implementations for handling the eligibility checks
  * can be achieved by deriving this class.
  * The default implementation in this base class only checks for the end effector pose and
  * ignores the joint states.
@@ -41,7 +41,7 @@ public:
 		const float& _effectorOriAccuracy,
         const float& _jointAnglesAccuracy);
 
-	virtual ~GraspEligibilityChecker(); 
+	virtual ~GraspEligibilityChecker();
 
 
     /**
@@ -50,7 +50,7 @@ public:
      * end effector pose is checked to be as expected.
      */
     virtual bool checksJointStates();
-    
+
     /**
      * Connects subscriber to receive most recent joint states. This only
      * makes sense if checkJointStates() returns true, and if the Grasp actions
@@ -75,18 +75,18 @@ protected:
      *      has to be at to perform the grasp
 	 */
 	bool graspExecutionEligible(const std::string& effectorLinkFrame,
-            const geometry_msgs::PoseStamped& graspPose, 
+            const geometry_msgs::PoseStamped& graspPose,
 			const float& _effectorPosAccuracy,
             const float& _effectorOriAccuracy);
 
     /**
      * Checks for consistency in the grasp goal. In particular, checks
      * whether the JointTrajectory (grasp_trajectory) relating to the grasp
-     * conforms to the fields in the manipulation_msgs::Grasp, i.e. the
+     * conforms to the fields in the moveit_msgs::Grasp, i.e. the
      * last trajectory point has to be the same as the
-     * manipulation_msgs::Grasp::(pre_)grasp_posture.
+     * moveit_msgs::Grasp::(pre_)grasp_posture.
      * \param useJointAnglesAccuracy the tolerance to use for comparing joint states
-     */   
+     */
     bool goalJointStatesConsistent(const GraspGoalT& graspGoal, const float useJointAnglesAccuracy) const;
 
  	// default tolerance for the effector target pose and actual effector pose to be
@@ -96,7 +96,7 @@ protected:
  	// default tolerance for the effector target orientation and actual effector orientation to be
 	// similar enough to accept a grasp action (in rad).
 	float effectorOriAccuracy;
-	
+
     // default tolerance for the joints (in rad) when checking against joint state targets
     float jointAnglesAccuracy;
 

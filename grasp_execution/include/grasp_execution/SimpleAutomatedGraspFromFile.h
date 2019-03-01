@@ -7,7 +7,7 @@ namespace grasp_execution
 {
 
 /**
- * Reads a manipulation_msgs/Grasp.msg from a file and uses this
+ * Reads a moveit_msgs/Grasp.msg from a file and uses this
  * as the result for grasp planning. Only minimal adaptations such as
  * object name are made to the message.
  *
@@ -21,11 +21,11 @@ public:
     virtual ~SimpleAutomatedGraspFromFile();
 
 protected:
-    virtual bool initImpl(); 
+    virtual bool initImpl();
     virtual bool getGrasp(const std::string& object_name, bool isGrasp, grasp_execution_msgs::GraspGoal& graspGoal);
 
 private:
-    std::string filename; 
+    std::string filename;
 };
 
 }  // namespace

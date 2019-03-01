@@ -1,7 +1,7 @@
 #include <grasp_execution/SimpleAutomatedGraspFromFile.h>
 #include <grasp_execution/SimpleGraspGenerator.h>
 #include <convenience_ros_functions/ROSFunctions.h>
-#include <manipulation_msgs/Grasp.h>
+#include <moveit_msgs/Grasp.h>
 
 using grasp_execution::SimpleAutomatedGraspFromFile;
 
@@ -18,7 +18,7 @@ bool SimpleAutomatedGraspFromFile::initImpl()
 
 bool SimpleAutomatedGraspFromFile::getGrasp(const std::string& object_name, bool isGrasp, grasp_execution_msgs::GraspGoal& graspGoal)
 {
-    manipulation_msgs::Grasp grasp;
+    moveit_msgs::Grasp grasp;
     if (!ROSFunctions::readFromFile(filename,grasp,true))
     {
         ROS_ERROR_STREAM("Could not read grasp from file "<<filename);
@@ -28,7 +28,7 @@ bool SimpleAutomatedGraspFromFile::getGrasp(const std::string& object_name, bool
     grasp.grasp_pose.header.frame_id=object_name;
     ROS_INFO_STREAM("Read grasp from file: "<<grasp);
 
-    // ROS_INFO_STREAM("generated manipulation_msgs::Grasp: "<<std::endl<<mgrasp);
+    // ROS_INFO_STREAM("generated moveit_msgs::Grasp: "<<std::endl<<mgrasp);
     std::string effector_link = jointsManager->getEffectorLink();
     grasp_execution::SimpleGraspGenerator::generateSimpleGraspGoal(effector_link,
         grasp,0, isGrasp, graspGoal);

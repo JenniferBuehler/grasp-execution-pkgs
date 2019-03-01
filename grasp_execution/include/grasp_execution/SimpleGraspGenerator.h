@@ -31,7 +31,7 @@ public:
      *
      * Note however that if the object is tipped over, the grasp still tries to grasp
      * the object from the top, which won't work.
-     * manipulation_msgs::Grasp::allowed_touch_objects is initialized with the object name.
+     * moveit_msgs::Grasp::allowed_touch_objects is initialized with the object name.
      *
      * \param joint_names the names of all gripper joints in the order they should
      *      appear in the JointState.
@@ -52,9 +52,9 @@ public:
         float pose_above_object,
         float pose_x_from_object,
         float pose_y_from_object,
-        float grasp_open_angles, //=0.05; //on real jaco, 0 can't be reached. 
+        float grasp_open_angles, //=0.05; //on real jaco, 0 can't be reached.
         float grasp_close_angles, //=0.7;
-        manipulation_msgs::Grasp& grasp) {
+        moveit_msgs::Grasp& grasp) {
 
         ROSFunctions::initSingleton();
 
@@ -84,17 +84,17 @@ public:
         _y*=pose_y_from_object;
         _z*=pose_above_object;
 
-        // ROS_INFO_STREAM("Generating grasp pose "<<aboveObj);	
+        // ROS_INFO_STREAM("Generating grasp pose "<<aboveObj);
         // ROS_INFO("Left/right: %f/%f",pose_x_from_object,pose_y_from_object);
-        
+
         grasp.id=grasp_id;
         grasp.pre_grasp_posture=simpleGrasp(joint_names, grasp_open_angles); //sensor_msgs::JointState, hand posture for the pre-grasp
         grasp.grasp_posture=simpleGrasp(joint_names, grasp_close_angles); //sensor_msgs::JointState, hand posture for the grasp
-        
+
         //grasp.grasp_pose.pose.position.x+=_x.x()+_y.x()+_z.x();
         //aboveObj.pose.position.y+=_x.y()+_y.y()+_z.y();
         aboveObj.pose.position.z+=pose_above_object;//_x.z()+_y.z()+_z.z();
-        
+
         //ROS_INFO_STREAM("Adapted grasp pose "<<aboveObj);
 
         Eigen::Quaterniond rq;
@@ -121,10 +121,10 @@ public:
 
         grasp.grasp_pose=aboveObj; //geometry_msgs::PoseStamped, effector pose for the grasp
         // ROS_INFO_STREAM("Final grasp pose "<<grasp.grasp_pose.pose);
-        
+
         grasp.grasp_quality=0.5; //probability of success
-        //grasp.approach= //manipulation_msgs::GripperTranslation
-        //grasp.retreat= //manipulation_msgs::GripperTranslation
+        //grasp.approach= //moveit_msgs::GripperTranslation
+        //grasp.retreat= //moveit_msgs::GripperTranslation
         grasp.max_contact_force=-1; //disable maximum contact force
 
         grasp.allowed_touch_objects.push_back(object_name);
@@ -140,10 +140,10 @@ public:
      * The current robot state is also not initialized, you have to do this
      * manually.
      *
-     * \param isGrasp true if this is a grasp action, false if un-grasp 
+     * \param isGrasp true if this is a grasp action, false if un-grasp
      */
     static void generateSimpleGraspGoal(const std::string& effectorLink,
-        const manipulation_msgs::Grasp& grasp,
+        const moveit_msgs::Grasp& grasp,
         const int graspID,
         bool isGrasp,
         grasp_execution_msgs::GraspGoal& graspGoal)
@@ -153,32 +153,36 @@ public:
         graspGoal.grasp.effector_link_name = effectorLink;
         graspGoal.is_grasp = isGrasp;
         graspGoal.ignore_effector_pose_ungrasp = true;
+        graspGoal.use_custom_tolerances = false;
+
+        if (grasp.grasp_posture.joint_names.size() !=
+            grasp.pre_grasp_posture.joint_names.size())
+        {
+          ROS_ERROR_STREAM("Expecting pre-grasp joint trajectory points to be "
+            << "of same size as grasp posture. Returning empty trajectory.");
+          return;
+        }
 
         trajectory_msgs::JointTrajectory graspTrajectory;
         // the joint names should be the same in pre_grasp_posture
         // and grasp_posture.
-        graspTrajectory.joint_names = grasp.grasp_posture.name;
+        graspTrajectory.joint_names = grasp.grasp_posture.joint_names;
         graspTrajectory.header.stamp = ros::Time::now();
-        trajectory_msgs::JointTrajectoryPoint preGrasp;
-        preGrasp.positions=grasp.pre_grasp_posture.position;
-        preGrasp.velocities=grasp.pre_grasp_posture.velocity;
-        preGrasp.effort=grasp.pre_grasp_posture.effort;
-        trajectory_msgs::JointTrajectoryPoint atGrasp;
-        atGrasp.positions=grasp.grasp_posture.position;
-        atGrasp.velocities=grasp.grasp_posture.velocity;
-        atGrasp.effort=grasp.grasp_posture.effort;
         if (isGrasp)
         {
-            graspTrajectory.points.push_back(preGrasp);
-            graspTrajectory.points.push_back(atGrasp);
+            graspTrajectory.points = grasp.pre_grasp_posture.points;
+            graspTrajectory.points.insert(graspTrajectory.points.end(),
+              grasp.grasp_posture.points.begin(),
+              grasp.grasp_posture.points.end());
         }
         else
         {
-            graspTrajectory.points.push_back(atGrasp);
-            graspTrajectory.points.push_back(preGrasp);
+            graspTrajectory.points = grasp.grasp_posture.points;
+            graspTrajectory.points.insert(graspTrajectory.points.end(),
+              grasp.pre_grasp_posture.points.begin(),
+              grasp.pre_grasp_posture.points.end());
         }
         graspGoal.grasp_trajectory=graspTrajectory;
-        graspGoal.use_custom_tolerances = false;
     }
 
     /**
@@ -197,18 +201,20 @@ public:
 private:
 
     // returns joint state for fingers in the grasp position for the simple test grasp
-    static sensor_msgs::JointState simpleGrasp(
+    static trajectory_msgs::JointTrajectory simpleGrasp(
         const std::vector<std::string> jointNames,
         float pos, float effort=0)
     {
-        sensor_msgs::JointState js;
+        trajectory_msgs::JointTrajectory js;
+        js.joint_names = jointNames;
+        trajectory_msgs::JointTrajectoryPoint jsp;
         for (int i=0; i<jointNames.size(); ++i)
         {
-            js.name.push_back(jointNames[i]);
-            js.position.push_back(pos);
-            js.velocity.push_back(0);
-            js.effort.push_back(effort);
-        } 
+            jsp.positions.push_back(pos);
+            jsp.velocities.push_back(0);
+            jsp.effort.push_back(effort);
+        }
+        js.points.push_back(jsp);
         return js;
     }
 
