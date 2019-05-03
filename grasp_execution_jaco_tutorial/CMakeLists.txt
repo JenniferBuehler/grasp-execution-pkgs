@@ -5,7 +5,6 @@ project(grasp_execution_jaco_tutorial)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
-  gazebo_grasp_plugin
   jaco_on_table
   jaco_joints
   moveit_object_handling
@@ -25,7 +24,7 @@ find_package(catkin REQUIRED COMPONENTS
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES grasp_execution_jaco_tutorial
- CATKIN_DEPENDS gazebo_grasp_plugin jaco_on_table jaco_joints moveit_object_handling grasp_execution roscpp 
+ CATKIN_DEPENDS jaco_on_table jaco_joints moveit_object_handling grasp_execution roscpp
 #  DEPENDS system_lib
 )
 
@@ -69,7 +68,7 @@ target_link_libraries(attach_cube_moveit_test
 # See http://ros.org/doc/api/catkin/html/adv_user_guide/variables.html
 
 ## Mark executables and/or libraries for installation
-install(TARGETS set_arm_to_cube_test grasp_cube_test attach_cube_moveit_test 
+install(TARGETS set_arm_to_cube_test grasp_cube_test attach_cube_moveit_test
    ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
    LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
    RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}

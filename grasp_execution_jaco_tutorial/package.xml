@@ -24,7 +24,6 @@
   <!-- The *_depend tags are used to specify dependencies -->
   <!-- Dependencies can be catkin packages or system dependencies -->
   <buildtool_depend>catkin</buildtool_depend>
-  <build_depend>gazebo_grasp_plugin</build_depend>
   <build_depend>jaco_on_table</build_depend>
   <build_depend>jaco_joints</build_depend>
   <build_depend>moveit_object_handling</build_depend>
